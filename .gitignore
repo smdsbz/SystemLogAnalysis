@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+# Vim Runtime Back-ups
+*.swp
