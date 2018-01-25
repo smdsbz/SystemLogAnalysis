@@ -3,7 +3,7 @@
 #include <stdexcept>
 using namespace std;
 
-#include "./Misc.h"
+#include "./LogClass.h"
 
 
 int

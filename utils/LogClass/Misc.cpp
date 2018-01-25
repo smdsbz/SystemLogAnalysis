@@ -13,7 +13,7 @@ using std::smatch; using std::ssub_match;
 
 #include <stdexcept>
 
-#include "Misc.h"
+#include "./LogClass.h"
 
 
 const string months[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
