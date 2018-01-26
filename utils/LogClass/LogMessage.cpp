@@ -60,77 +60,67 @@ LogMessage::LogMessage(const LogMessage &copy) {
 }
 
 
-LogMessage&
-LogMessage::operator=(const LogMessage &other) {
-  if (*this == other) { return *this; }
-  this->host = other.host;
-  this->sender = other.sender;
-  this->message = other.message;
-  return *this;
-}
-
-
-bool
-LogMessage::operator!=(const LogMessage &other) {
-  if (this->host != other.host) { return true; }
-  if (this->sender != other.sender) { return true; }
-  if (this->message != other.message) { return true; }
-  return false;
-}
-
-
-bool
-LogMessage::operator==(const LogMessage &other) {
-  return (! (*this != other));
-}
-
-
-inline bool
-LogMessage::notempty() {
-  return (! (this->host.empty()));
-}
-
-
 void
 LogMessage::append_msg(string more) {
-  // WHY: some apps (like google-chrome) will generate logs that span across
-  //      multiple lines (usually xml-like), thus you will need to append
-  //      the messages in the new lines to a previous `LogMessage` instance,
-  //      otherwise the log read into memory will be incomplete, lack unique
-  //      informations and cause further problem reading following logs
+  // WHY:  Some apps (like google-chrome) will generate logs that span across
+  //       multiple lines (usually xml-like), thus you will need to append
+  //       the messages in the new lines to a previous `LogMessage` instance.
+  //       Otherwise the log read into memory will be incomplete, lack unique
+  //       informations and cause further problem reading following logs.
   message.append(string("\n") + more);
   return;
 }
 
 
+uint64_t
+strhash(string str) {
+  // ALG:  For chars in message string, collect their ascii values,
+  //       times 6 (fill the 5000 hash space). After the for loop, subtract
+  //       the sum outcome by 10000 (expected sum average value).
+  //       Lastly mod the sum by `HASH_SPACE` (fit into static hash space).
+  //
+  // HACK: Since it's highly possible that log messages have their first
+  //       10-to-40-ish characters *IDENTICAL*, a better practice is that you
+  //       start your hash from the end.
+  //       Here I take the last `STRHASH_RANGE` (now 30) chars.
+  uint64_t ret = 0U;
+  auto curr = str.end(); --curr;    // `str.end()` is actually one-off-end
+  auto begin = str.begin();
+  for (size_t max_range = STRHASH_RANGE;
+       curr != begin && max_range != 0; --curr, --max_range) {
+    ret += static_cast<uint8_t>(*curr) * 6; // NOTE: it's okay if overflow
+  }
+  return (ret - 10000U) % HASH_SPACE;
+}
+
 
 /****** Test ******/
 
-// int main(int argc, const char *argv[]) {
-//   cout << "==== Test LogMessage ====" << endl;
-// 
-//   auto sample = string("Jan  8 12:07:06 zhuxiaoguangs-MacBook-Air com.apple.x"
-//       "pc.launchd[1] (com.apple.preference.displays.MirrorDisplays): Service "
-//       "only ran for 0 seconds. Pushing respawn out by 10 seconds.");
-//   auto info = LogMessage();
-//   cout << "empty init passed" << '\n';
-//   info = LogMessage(sample);
-//   cout << "arg init / operator= passed" << '\n';
-//   auto info_cpy = LogMessage(info);
-//   cout << "copy init passed" << '\n';
-//   if (info == LogMessage(sample)) {
-//     cout << "operator== / operator!= passed" << '\n';
-//   } else { cout << "operator== / operator!= ERROR!" << '\n'; }
-//   if (info.notempty() && LogMessage().notempty() == false) {
-//     cout << "notempty() passed" << '\n';
-//   }
-//   info.append_msg("some other texts...");
-//   cout << info.message << '\n';
-// 
-//   for (size_t timer = 0; timer != 1E+4; ++timer) {
-//     cout << "hashed message ==> " << strhash(info.message) << '\n';
-//   }
-//   cout << "end of test" << endl;
-//   return 0;
-// }
+int main(int argc, const char *argv[]) {
+  cout << "==== Test LogMessage ====" << endl;
+
+  auto sample = string("Jan  8 12:07:06 zhuxiaoguangs-MacBook-Air com.apple.x"
+      "pc.launchd[1] (com.apple.preference.displays.MirrorDisplays): Service "
+      "only ran for 0 seconds. Pushing respawn out by 10 seconds.");
+  auto info = LogMessage();
+  cout << "empty init passed" << '\n';
+  info = LogMessage(sample);
+  cout << "arg init / operator= passed" << '\n';
+  auto info_cpy = LogMessage(info);
+  cout << "copy init passed" << '\n';
+  if (info == LogMessage(sample)) {
+    cout << "operator== / operator!= passed" << '\n';
+  } else { cout << "operator== / operator!= ERROR!" << '\n'; }
+  if (info.notempty() && LogMessage().notempty() == false) {
+    cout << "notempty() passed" << '\n';
+  }
+  info.append_msg("some other texts...");
+  cout << info.message << '\n';
+
+  for (size_t timer = 0; timer != 1E+4; ++timer) {
+    cout << "hashed message ==> " << strhash(info.message) << '\n';
+  }
+  cout << "end of test" << endl;
+  return 0;
+}
 

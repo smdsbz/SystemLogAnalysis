@@ -81,8 +81,8 @@ LogDate::LogDate(string str) {
       //   cout << each << " ";
       // }
       // cout << endl;
-      throw std::runtime_error(string("LogDate.cpp::LogDate(str) `str` passed ")
-          + "in was illegal: " + std::to_string(matches.size()) + " found");
+      throw std::runtime_error(string("LogDate.cpp::LogDate(str) `str` passed")
+          + " in was illegal: " + std::to_string(matches.size()) + " found");
     }
     // match success
     time.mon = _month_str_to_ushort(matches[1].str());
@@ -97,51 +97,6 @@ LogDate::LogDate(string str) {
 }
 
 
-bool
-LogDate::operator==(const LogDate &other) {
-  if (this->time.mon != other.time.mon) { return false; }
-  if (this->time.dat != other.time.dat) { return false; }
-  if (this->time.hor != other.time.hor) { return false; }
-  if (this->time.min != other.time.min) { return false; }
-  if (this->time.sec != other.time.sec) { return false; }
-  return true;
-}
-
-
-bool
-LogDate::operator>(const LogDate &other) {
-  if (this->time.mon <= other.time.mon) { return false; }
-  if (this->time.dat <= other.time.dat) { return false; }
-  if (this->time.hor <= other.time.hor) { return false; }
-  if (this->time.min <= other.time.min) { return false; }
-  if (this->time.sec <= other.time.sec) { return false; }
-  return true;
-}
-
-
-bool
-LogDate::operator<=(const LogDate &other) {
-  return (! (*this > other));
-}
-
-
-bool
-LogDate::operator<(const LogDate &other) {
-  if (this->time.mon >= other.time.mon) { return false; }
-  if (this->time.dat >= other.time.dat) { return false; }
-  if (this->time.hor >= other.time.hor) { return false; }
-  if (this->time.min >= other.time.min) { return false; }
-  if (this->time.sec >= other.time.sec) { return false; }
-  return true;
-}
-
-
-bool
-LogDate::operator>=(const LogDate &other) {
-  return (! (*this < other));
-}
-
-
 string
 LogDate::str() {
   string ret;
@@ -150,24 +105,6 @@ LogDate::str() {
   ret.append(_ushort_to_dualdigit(time.hor) + " ");
   ret.append(_ushort_to_dualdigit(time.min) + " ");
   ret.append(_ushort_to_dualdigit(time.sec));
-  return ret;
-}
-
-
-/****** LogMessage ******/
-
-uint64_t
-strhash(string str) {
-  // HACK: because it's highly possible that log messages have their first
-  //       10-to-40-ish characters *IDENTICAL*, a better practice is that you
-  //       start your hash from the end
-  uint64_t ret = 0U;
-  auto curr = str.end(); --curr;    // `str.end()` is actually one-off-end
-  auto begin = str.begin();
-  for (size_t max_range = STRHASH_RANGE;
-       curr != begin && max_range != 0; --curr, --max_range) {
-    ret += static_cast<uint8_t>(*curr); // NOTE: it's okay if overflow
-  }
   return ret;
 }
 

@@ -6,6 +6,8 @@ using std::string;
 
 #include <stdexcept>
 
+#include "./LogClass.h"
+
 
 /****** LogRecord ******/
 
@@ -18,51 +20,38 @@ LogRecord::LogRecord(string str) {
         + "to create LogRecord instance due to: " + e.what());
   }
   // date set
-  message = nullptr; time_next = nullptr; sender_next = nullptr;
+  message = nullptr; time_suc = nullptr; sender_suc = nullptr;
   return;
 }
 
 
 LogRecord::~LogRecord() {
-  // HACK: actually there's nothing you can do here, for you don't
+  // HACK: Actually there's nothing you can do here, for you don't
   //       know the Graph context, so you've got no way of knowing how to
-  //       re-chain related `LogRecord`s
+  //       re-chain related `LogRecord`s.
   /* pass */ ;
   return;
 }
 
 
-inline bool
-LogRecord::operator<=(const LogRecord &other) {
-  // NOTE: relation defined to be time relation
-  return (this->date <= other.date);
-}
-
-
-inline bool
-LogRecord::operator>=(const LogRecord &other) {
-  return (this->date >= other.date);
-}
-
-
-inline LogRecord &
-set_message(LogMessage &msg) {
+LogRecord &
+LogRecord::set_message(LogMessage &msg) {
   message = &msg;
-  return this;
+  return *this;
 }
 
 
-inline LogRecord &
-set_time_successor(LogRecord &nxt) {
+LogRecord &
+LogRecord::set_time_successor(LogRecord &nxt) {
   time_suc = &nxt;
-  return this;
+  return *this;
 }
 
 
-inline LogRecord &
-set_sender_successor(LogRecord &nxt) {
-  sender_next = &nxt;
-  return this;
+LogRecord &
+LogRecord::set_sender_successor(LogRecord &nxt) {
+  sender_suc = &nxt;
+  return *this;
 }
 
 
