@@ -16,24 +16,19 @@ using std::smatch; using std::ssub_match;
 #include "./LogClass.h"
 
 
-const string months[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
-    "Aug", "Sep", "Oct", "Nov", "Dec" };
-const string _re_month = "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec";
-const string RE_DATE = "(" + _re_month + ") ([1-3][0-9]?) "
-                       + "([0-9]{2}):([0-9]{2}):([0-9]{2})";
-
+/****** LogDate ******/
 
 unsigned short
 _month_str_to_ushort(string str) {
-  if (str == "Jan") { return 1; }
-  if (str == "Feb") { return 2; }
-  if (str == "Mar") { return 3; }
-  if (str == "Apr") { return 4; }
-  if (str == "May") { return 5; }
-  if (str == "Jun") { return 6; }
-  if (str == "Jul") { return 7; }
-  if (str == "Aug") { return 8; }
-  if (str == "Sep") { return 9; }
+  if (str == "Jan") { return  1; }
+  if (str == "Feb") { return  2; }
+  if (str == "Mar") { return  3; }
+  if (str == "Apr") { return  4; }
+  if (str == "May") { return  5; }
+  if (str == "Jun") { return  6; }
+  if (str == "Jul") { return  7; }
+  if (str == "Aug") { return  8; }
+  if (str == "Sep") { return  9; }
   if (str == "Oct") { return 10; }
   if (str == "Nov") { return 11; }
   if (str == "Dec") { return 12; }
@@ -80,7 +75,7 @@ LogDate::LogDate(string str) {
   try {
     regex re(RE_DATE);
     smatch matches;
-    std::regex_match(str, matches, re); // 匹配 str 中的模式，转换为日期
+    regex_match(str, matches, re); // 匹配 str 中的模式，转换为日期
     if (matches.size() != 6) {  // 匹配失败
       // for (auto &each : matches) {
       //   cout << each << " ";
@@ -96,7 +91,7 @@ LogDate::LogDate(string str) {
     time.min = stoul(matches[4].str());
     time.sec = stoul(matches[5].str());
   } catch (const std::regex_error &e) {
-    throw std::runtime_error("Misc.cpp:: illegal regex!");
+    throw e;
   }
   return;
 }
@@ -110,6 +105,23 @@ LogDate::str() {
   ret.append(_ushort_to_dualdigit(time.hor) + " ");
   ret.append(_ushort_to_dualdigit(time.min) + " ");
   ret.append(_ushort_to_dualdigit(time.sec));
+  return ret;
+}
+
+
+/****** LogMessage ******/
+
+uint64_t
+strhash(string str) {
+  // HACK: because it's highly possible that log messages have their first
+  //       10-to-40-ish characters *IDENTICAL*, a better practice is that you
+  //       start your hash from the end
+  uint64_t ret = 0U;
+  auto curr = str.end(); --curr;    // `str.end()` is actually one-off-end
+  for (auto begin = str.begin(), size_t max_range = STRHASH_RANGE;
+       curr != begin && max_range != 0; --curr, --max_range) {
+    ret += static_cast<uint8_t>(*curr); // NOTE: it's okay if overflow
+  }
   return ret;
 }
 

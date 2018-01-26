@@ -8,6 +8,7 @@ using namespace std;
 
 int
 main(int argc, const char *argv[]) {
+  cout << "==== LogDate Test ====" << endl;
   string input_date;
   while (getline(cin, input_date)) {
     try {
