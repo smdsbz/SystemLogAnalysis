@@ -36,12 +36,12 @@ LogMessage::LogMessage(string str) {
     regex re(RE_WHOLE);
     smatch matches;
     regex_match(str, matches, re);
-    if (matches.size() != 5) {  // 匹配失败
+    if (matches.size() != 5) {  // match failed
       throw std::runtime_error(string("LogClass.cpp::LogMessage(str) `str` ")
           + "passed in was illegal: " + std::to_string(matches.size())
           + " found");
     }
-    // 匹配成功
+    // match success
     host = matches[2].str();
     sender = matches[3].str();
     message = matches[4].str();
@@ -81,13 +81,13 @@ LogMessage::operator!=(const LogMessage &other) {
 
 bool
 LogMessage::operator==(const LogMessage &other) {
-  return (! *this == other);
+  return (! (*this != other));
 }
 
 
 inline bool
 LogMessage::notempty() {
-  return (! this->host.empty());
+  return (! (this->host.empty()));
 }
 
 
@@ -101,4 +101,36 @@ LogMessage::append_msg(string more) {
   message.append(string("\n") + more);
   return;
 }
+
+
+
+/****** Test ******/
+
+// int main(int argc, const char *argv[]) {
+//   cout << "==== Test LogMessage ====" << endl;
+// 
+//   auto sample = string("Jan  8 12:07:06 zhuxiaoguangs-MacBook-Air com.apple.x"
+//       "pc.launchd[1] (com.apple.preference.displays.MirrorDisplays): Service "
+//       "only ran for 0 seconds. Pushing respawn out by 10 seconds.");
+//   auto info = LogMessage();
+//   cout << "empty init passed" << '\n';
+//   info = LogMessage(sample);
+//   cout << "arg init / operator= passed" << '\n';
+//   auto info_cpy = LogMessage(info);
+//   cout << "copy init passed" << '\n';
+//   if (info == LogMessage(sample)) {
+//     cout << "operator== / operator!= passed" << '\n';
+//   } else { cout << "operator== / operator!= ERROR!" << '\n'; }
+//   if (info.notempty() && LogMessage().notempty() == false) {
+//     cout << "notempty() passed" << '\n';
+//   }
+//   info.append_msg("some other texts...");
+//   cout << info.message << '\n';
+// 
+//   for (size_t timer = 0; timer != 1E+4; ++timer) {
+//     cout << "hashed message ==> " << strhash(info.message) << '\n';
+//   }
+//   cout << "end of test" << endl;
+//   return 0;
+// }
 

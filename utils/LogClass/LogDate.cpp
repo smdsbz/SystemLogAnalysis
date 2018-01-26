@@ -33,7 +33,7 @@ _month_str_to_ushort(string str) {
   if (str == "Nov") { return 11; }
   if (str == "Dec") { return 12; }
   else {
-    throw std::runtime_error("Misc.cpp::_month_str_to_ushort:: illegal "
+    throw std::runtime_error("LogDate.cpp::_month_str_to_ushort:: illegal "
         "month string");
   }
 }
@@ -42,7 +42,7 @@ _month_str_to_ushort(string str) {
 string
 _month_ushort_to_str(unsigned short mon) {
   if (mon == 0 || mon > 12) {
-    throw std::runtime_error("Misc.cpp::_month_ushort_to_str:: illegal "
+    throw std::runtime_error("LogDate.cpp::_month_ushort_to_str:: illegal "
         "month number!");
   }
   return months[mon - 1];
@@ -73,18 +73,18 @@ LogDate::LogDate() {
 LogDate::LogDate(string str) {
   _init_to_zero();
   try {
-    regex re(RE_DATE);
-    smatch matches;
-    regex_match(str, matches, re); // 匹配 str 中的模式，转换为日期
-    if (matches.size() != 6) {  // 匹配失败
+    regex re(RE_DATE);  // regex
+    smatch matches;     // store matched strings
+    regex_match(str, matches, re); // do match
+    if (matches.size() != 6) {  // match failed
       // for (auto &each : matches) {
       //   cout << each << " ";
       // }
       // cout << endl;
-      throw std::runtime_error(string("Misc.cpp::LogDate(str) `str` passed ")
+      throw std::runtime_error(string("LogDate.cpp::LogDate(str) `str` passed ")
           + "in was illegal: " + std::to_string(matches.size()) + " found");
     }
-    // 匹配成功
+    // match success
     time.mon = _month_str_to_ushort(matches[1].str());
     time.dat = stoul(matches[2].str());
     time.hor = stoul(matches[3].str());
@@ -94,6 +94,51 @@ LogDate::LogDate(string str) {
     throw e;
   }
   return;
+}
+
+
+bool
+LogDate::operator==(const LogDate &other) {
+  if (this->time.mon != other.time.mon) { return false; }
+  if (this->time.dat != other.time.dat) { return false; }
+  if (this->time.hor != other.time.hor) { return false; }
+  if (this->time.min != other.time.min) { return false; }
+  if (this->time.sec != other.time.sec) { return false; }
+  return true;
+}
+
+
+bool
+LogDate::operator>(const LogDate &other) {
+  if (this->time.mon <= other.time.mon) { return false; }
+  if (this->time.dat <= other.time.dat) { return false; }
+  if (this->time.hor <= other.time.hor) { return false; }
+  if (this->time.min <= other.time.min) { return false; }
+  if (this->time.sec <= other.time.sec) { return false; }
+  return true;
+}
+
+
+bool
+LogDate::operator<=(const LogDate &other) {
+  return (! (*this > other));
+}
+
+
+bool
+LogDate::operator<(const LogDate &other) {
+  if (this->time.mon >= other.time.mon) { return false; }
+  if (this->time.dat >= other.time.dat) { return false; }
+  if (this->time.hor >= other.time.hor) { return false; }
+  if (this->time.min >= other.time.min) { return false; }
+  if (this->time.sec >= other.time.sec) { return false; }
+  return true;
+}
+
+
+bool
+LogDate::operator>=(const LogDate &other) {
+  return (! (*this < other));
 }
 
 
@@ -118,10 +163,30 @@ strhash(string str) {
   //       start your hash from the end
   uint64_t ret = 0U;
   auto curr = str.end(); --curr;    // `str.end()` is actually one-off-end
-  for (auto begin = str.begin(), size_t max_range = STRHASH_RANGE;
+  auto begin = str.begin();
+  for (size_t max_range = STRHASH_RANGE;
        curr != begin && max_range != 0; --curr, --max_range) {
     ret += static_cast<uint8_t>(*curr); // NOTE: it's okay if overflow
   }
   return ret;
 }
+
+
+/****** Test ******/
+
+// int
+// main(int argc, const char *argv[]) {
+//   cout << "==== LogDate Test ====" << endl;
+//   string input_date;
+//   while (getline(cin, input_date)) {
+//     try {
+//       auto date = LogDate(input_date);
+//       cout << "matched LogDate: " << date.str() << endl;
+//     } catch (const std::runtime_error &e) {
+//       cout << e.what() << endl;
+//     }
+//   }
+//   cout << "<C-D> pressed" << endl;
+//   return 0;
+// }
 

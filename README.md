@@ -10,7 +10,8 @@ SystemLogAnalysis/
 +--- utils/
 |   +--- LogClass/        // basic wrapper for log messages
 |   |   +--- LogClass.h
-|   |   +--- LogClass.c
+|   |   +--- Misc.cpp
+|   |   +--- LogClass.cpp
 |   +--- HashTable/       // enable fast search
 |   +--- Graph/           // psudo "Graph" actually...
 |   |                     //   logs are quite *linear* already
