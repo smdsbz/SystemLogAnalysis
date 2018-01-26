@@ -47,7 +47,7 @@ public:
     if (this->time.sec != other.time.sec) { return false; }
     return true;
   }
-  inline bool operator>(const LogDate &other) {
+  inline bool operator> (const LogDate &other) {
     if (this->time.mon <= other.time.mon) { return false; }
     if (this->time.dat <= other.time.dat) { return false; }
     if (this->time.hor <= other.time.hor) { return false; }
@@ -58,7 +58,7 @@ public:
   inline bool operator<=(const LogDate &other) {
     return !(*this > other);
   }
-  inline bool operator<(const LogDate &other) {
+  inline bool operator< (const LogDate &other) {
     if (this->time.mon >= other.time.mon) { return false; }
     if (this->time.dat >= other.time.dat) { return false; }
     if (this->time.hor >= other.time.hor) { return false; }
@@ -87,7 +87,7 @@ public:
   LogMessage();
   LogMessage(string raw_input_str);
   LogMessage(const LogMessage &copy);
-  inline LogMessage &operator=(const LogMessage &other) {
+  inline LogMessage &operator= (const LogMessage &other) {
     if (*this == other) { return *this; }
     this->host = other.host;
     this->sender = other.sender;
