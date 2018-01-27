@@ -33,7 +33,7 @@ _month_str_to_ushort(string str) {
   if (str == "Nov") { return 11; }
   if (str == "Dec") { return 12; }
   else {
-    throw std::runtime_error("LogDate.cpp::_month_str_to_ushort:: illegal "
+    throw std::runtime_error("LogDate.cpp::_month_str_to_ushort() illegal "
         "month string");
   }
 }
@@ -42,7 +42,7 @@ _month_str_to_ushort(string str) {
 string
 _month_ushort_to_str(unsigned short mon) {
   if (mon == 0 || mon > 12) {
-    throw std::runtime_error("LogDate.cpp::_month_ushort_to_str:: illegal "
+    throw std::runtime_error("LogDate.cpp::_month_ushort_to_str() illegal "
         "month number!");
   }
   return months[mon - 1];
@@ -50,9 +50,13 @@ _month_ushort_to_str(unsigned short mon) {
 
 
 string
-_ushort_to_dualdigit(unsigned short us) {
+_ushort_to_dualdigit(unsigned short us, const string filler="0") {
+  if (filler.empty()) {
+    throw std::length_error("LogDate.cpp:_ushort_to_dualdigit() "
+        "`filler` should not be empty!");
+  }
   string ret;
-  if (us < 10) { ret.push_back('0'); }
+  if (us < 10) { ret.push_back(filler[0]); }
   else { ret.push_back(static_cast<char>('0' + us / 10)); }
   ret.push_back(static_cast<char>('0' + us % 10));
   return ret;
@@ -61,7 +65,7 @@ _ushort_to_dualdigit(unsigned short us) {
 
 void
 LogDate::_init_to_zero() {
-  memset(&time, 0U, 4);
+  memset(&time, 0U, 4); // all to zero
   return;
 }
 
@@ -70,10 +74,10 @@ LogDate::LogDate() {
   return;
 }
 
-LogDate::LogDate(string str) {
+LogDate::LogDate(const string str) {
   _init_to_zero();
   try {
-    regex re(RE_DATE);  // regex
+    regex re(RE_DATE + "[^\n]*");  // regex
     smatch matches;     // store matched strings
     regex_match(str, matches, re); // do match
     if (matches.size() != 6) {  // match failed
@@ -90,6 +94,7 @@ LogDate::LogDate(string str) {
     time.hor = stoul(matches[3].str());
     time.min = stoul(matches[4].str());
     time.sec = stoul(matches[5].str());
+    // TODO: leagality check
   } catch (const std::regex_error &e) {
     throw e;
   }
@@ -97,15 +102,56 @@ LogDate::LogDate(string str) {
 }
 
 
+LogDate &
+LogDate::operator+(const size_t sec) {
+  for (size_t remain = sec + 1; remain != 0; --remain) {
+    time.sec = (time.sec + 1) % 60;
+    // forward detect
+    if (time.sec != 0) { continue; }
+    time.min = (time.min + 1) % 60;
+    if (time.min != 0) { continue; }
+    time.hor = (time.hor + 1) % 24;
+    if (time.hor != 0) { continue; }
+    // time.hor == 0: forward a day
+    time.dat = time.dat + 1;
+    // forward a month
+    switch (time.mon) {
+      case 1: case 3: case 5: case 7: case 8: case 10: case 12: {
+        if (time.dat == 0) {    // 32 wrap-around
+          time.mon = time.mon + 1;
+          if (time.mon == 13) { time.mon = 1;}
+        }
+      }
+      case 4: case 6: case 9: case 11: {
+        if (time.dat == 31) {
+          time.mon = time.mon + 1;
+        }
+      }
+      case 2: { // HACK: Unfortunately, log does *NOT* record year.
+                //       Treating Feb has 28 days
+        if (time.dat == 29) {   // TODO: Auto year recognition
+          time.mon = time.mon + 1;
+        }
+      }
+    }   // end of switch
+  } // end of for
+  return *this;
+}
+
+
 string
 LogDate::str() {
-  string ret;
-  ret.append(_month_ushort_to_str(time.mon) + " ");
-  ret.append(_ushort_to_dualdigit(time.dat) + " ");
-  ret.append(_ushort_to_dualdigit(time.hor) + " ");
-  ret.append(_ushort_to_dualdigit(time.min) + " ");
-  ret.append(_ushort_to_dualdigit(time.sec));
-  return ret;
+  try {
+    string ret;
+    ret.append(_month_ushort_to_str(time.mon) + " ");
+    ret.append(_ushort_to_dualdigit(time.dat, " ") + " ");
+    ret.append(_ushort_to_dualdigit(time.hor) + " ");
+    ret.append(_ushort_to_dualdigit(time.min) + " ");
+    ret.append(_ushort_to_dualdigit(time.sec));
+    return ret;
+  } catch (const std::runtime_error &e) {
+    throw e;
+  }
 }
 
 

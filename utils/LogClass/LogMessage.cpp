@@ -30,7 +30,7 @@ LogMessage::LogMessage() {
 }
 
 
-LogMessage::LogMessage(string str) {
+LogMessage::LogMessage(const string str) {
   _init_to_zero();
   try {
     regex re(RE_WHOLE);
@@ -96,31 +96,31 @@ strhash(string str) {
 
 /****** Test ******/
 
-int main(int argc, const char *argv[]) {
-  cout << "==== Test LogMessage ====" << endl;
-
-  auto sample = string("Jan  8 12:07:06 zhuxiaoguangs-MacBook-Air com.apple.x"
-      "pc.launchd[1] (com.apple.preference.displays.MirrorDisplays): Service "
-      "only ran for 0 seconds. Pushing respawn out by 10 seconds.");
-  auto info = LogMessage();
-  cout << "empty init passed" << '\n';
-  info = LogMessage(sample);
-  cout << "arg init / operator= passed" << '\n';
-  auto info_cpy = LogMessage(info);
-  cout << "copy init passed" << '\n';
-  if (info == LogMessage(sample)) {
-    cout << "operator== / operator!= passed" << '\n';
-  } else { cout << "operator== / operator!= ERROR!" << '\n'; }
-  if (info.notempty() && LogMessage().notempty() == false) {
-    cout << "notempty() passed" << '\n';
-  }
-  info.append_msg("some other texts...");
-  cout << info.message << '\n';
-
-  for (size_t timer = 0; timer != 1E+4; ++timer) {
-    cout << "hashed message ==> " << strhash(info.message) << '\n';
-  }
-  cout << "end of test" << endl;
-  return 0;
-}
+// int main(int argc, const char *argv[]) {
+//   cout << "==== Test LogMessage ====" << endl;
+// 
+//   auto sample = string("Jan  8 12:07:06 zhuxiaoguangs-MacBook-Air com.apple.x"
+//       "pc.launchd[1] (com.apple.preference.displays.MirrorDisplays): Service "
+//       "only ran for 0 seconds. Pushing respawn out by 10 seconds.");
+//   auto info = LogMessage();
+//   cout << "empty init passed" << '\n';
+//   info = LogMessage(sample);
+//   cout << "arg init / operator= passed" << '\n';
+//   auto info_cpy = LogMessage(info);
+//   cout << "copy init passed" << '\n';
+//   if (info == LogMessage(sample)) {
+//     cout << "operator== / operator!= passed" << '\n';
+//   } else { cout << "operator== / operator!= ERROR!" << '\n'; }
+//   if (info.notempty() && LogMessage().notempty() == false) {
+//     cout << "notempty() passed" << '\n';
+//   }
+//   info.append_msg("some other texts...");
+//   cout << info.message << '\n';
+// 
+//   for (size_t timer = 0; timer != 1E+4; ++timer) {
+//     cout << "hashed message ==> " << strhash(info.message) << '\n';
+//   }
+//   cout << "end of test" << endl;
+//   return 0;
+// }
 
