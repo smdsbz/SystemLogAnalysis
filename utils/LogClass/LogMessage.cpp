@@ -30,7 +30,7 @@ LogMessage::LogMessage() {
 }
 
 
-LogMessage::LogMessage(const string str) {
+LogMessage::LogMessage(const string &str) {
   _init_to_zero();
   try {
     regex re(RE_WHOLE);

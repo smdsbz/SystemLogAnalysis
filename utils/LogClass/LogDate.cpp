@@ -74,7 +74,7 @@ LogDate::LogDate() {
   return;
 }
 
-LogDate::LogDate(const string str) {
+LogDate::LogDate(const string &str) {
   _init_to_zero();
   try {
     regex re(RE_DATE + "[^\n]*");  // regex

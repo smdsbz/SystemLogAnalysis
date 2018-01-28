@@ -23,7 +23,7 @@ const string RE_WHOLE = (string("((?:") + _re_month
     + "([^\n]+)$";              // message (anything hence to the eol)
 
 
-/****** Class Definitions ******/
+/****** Class Declarations ******/
 
 class LogDate {
 public:
@@ -38,7 +38,7 @@ public:
 
 public:
   LogDate();
-  LogDate(const string re_mathed_date_string);  // whole_log_string is fine
+  LogDate(const string &re_mathed_date_string); // whole_log_string is fine
   inline bool operator==(const LogDate &other) {
     if (this->time.mon != other.time.mon) { return false; }
     if (this->time.dat != other.time.dat) { return false; }
@@ -87,7 +87,7 @@ public:
 
 public:
   LogMessage();
-  LogMessage(const string log_string_whole);
+  LogMessage(const string &log_string_whole);
   LogMessage(const LogMessage &copy);
   inline LogMessage &operator= (const LogMessage &other) {
     if (*this == other) { return *this; }
@@ -116,9 +116,10 @@ public:
   LogDate       date;
   LogRecord    *time_suc    = nullptr;
   LogRecord    *sender_suc  = nullptr;
+  class iterator;
 
 public:
-  LogRecord(const string re_mathed_date_string);
+  LogRecord(const string &re_mathed_date_string, const bool whole=false);
   ~LogRecord();
   inline bool operator<=(const LogRecord &other) {
     // NOTE: relation defined as time relation

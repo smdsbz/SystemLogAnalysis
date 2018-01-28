@@ -11,10 +11,11 @@ using std::string;
 
 /****** LogRecord ******/
 
-LogRecord::LogRecord(const string str) {
+LogRecord::LogRecord(const string &str, const bool whole) {
   // NOTE: Only set date, other should be done in Graph.
   try {
-    date = LogDate(str);
+    if (whole == true) { date = LogDate(str.substr(0, 15)); }   // static hack
+    else { date = LogDate(str); }
   } catch (const std::runtime_error &e) {
     throw std::runtime_error(string("LogRecord.cpp::LogRecord(str) failed ")
         + "to create LogRecord instance due to: " + e.what());
