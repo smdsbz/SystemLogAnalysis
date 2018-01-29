@@ -37,9 +37,8 @@ LogMessage::LogMessage(const string &str) {
     smatch matches;
     regex_match(str, matches, re);
     if (matches.size() != 5) {  // match failed
-      throw std::runtime_error(string("LogClass.cpp::LogMessage(str) `str` ")
-          + "passed in was illegal: " + std::to_string(matches.size())
-          + " found");
+      throw std::runtime_error(string("LogMessage.cpp::LogMessage(str) `str` ")
+          + "passed in was illegal: " + str);
     }
     // match success
     host = matches[2].str();
@@ -61,7 +60,7 @@ LogMessage::LogMessage(const LogMessage &copy) {
 
 
 void
-LogMessage::append_msg(string more) {
+LogMessage::append_msg(const string &more) {
   // WHY:  Some apps (like google-chrome) will generate logs that span across
   //       multiple lines (usually xml-like), thus you will need to append
   //       the messages in the new lines to a previous `LogMessage` instance.
@@ -71,27 +70,28 @@ LogMessage::append_msg(string more) {
   return;
 }
 
-
-uint64_t
-strhash(string str) {
-  // ALG:  For chars in message string, collect their ascii values,
-  //       times 6 (fill the 5000 hash space). After the for loop, subtract
-  //       the sum outcome by 10000 (expected sum average value).
-  //       Lastly mod the sum by `HASH_SPACE` (fit into static hash space).
-  //
-  // HACK: Since it's highly possible that log messages have their first
-  //       10-to-40-ish characters *IDENTICAL*, a better practice is that you
-  //       start your hash from the end.
-  //       Here I take the last `STRHASH_RANGE` (now 30) chars.
-  uint64_t ret = 0U;
-  auto curr = str.end(); --curr;    // `str.end()` is actually one-off-end
-  auto begin = str.begin();
-  for (size_t max_range = STRHASH_RANGE;
-       curr != begin && max_range != 0; --curr, --max_range) {
-    ret += static_cast<uint8_t>(*curr) * 6; // NOTE: it's okay if overflow
-  }
-  return (ret - 10000U) % HASH_SPACE;
-}
+/**** DEPRECATED ****/
+// uint64_t
+// strhash(string str, size_t pool_size=HASH_SPACE,
+//         size_t range=STRHASH_RANGE) {
+//   // ALG:  For chars in message string, collect their ascii values,
+//   //       times 6 (fill the 5000 hash space). After the for loop, subtract
+//   //       the sum outcome by 10000 (expected sum average value).
+//   //       Lastly mod the sum by `HASH_SPACE` (fit into static hash space).
+//   //
+//   // HACK: Since it's highly possible that log messages have their first
+//   //       10-to-40-ish characters *IDENTICAL*, a better practice is that you
+//   //       start your hash from the end.
+//   //       Here I take the last `STRHASH_RANGE` (now 30) chars.
+//   uint64_t ret = 0U;
+//   auto curr = str.end(); --curr;    // `str.end()` is actually one-off-end
+//   auto begin = str.begin();
+//   for (size_t max_range = range;
+//        curr != begin && max_range != 0; --curr, --max_range) {
+//     ret += static_cast<uint8_t>(*curr) * 6; // NOTE: it's okay if overflow
+//   }
+//   return (ret - 10000U) % pool_size;
+// }
 
 
 /****** Test ******/
@@ -117,9 +117,9 @@ strhash(string str) {
 //   info.append_msg("some other texts...");
 //   cout << info.message << '\n';
 // 
-//   for (size_t timer = 0; timer != 1E+4; ++timer) {
-//     cout << "hashed message ==> " << strhash(info.message) << '\n';
-//   }
+//   // for (size_t timer = 0; timer != 1E+4; ++timer) {
+//   //   cout << "hashed message ==> " << strhash(info.message) << '\n';
+//   // }
 //   cout << "end of test" << endl;
 //   return 0;
 // }

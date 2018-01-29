@@ -1,137 +1,92 @@
 #ifndef HASHTABLE_H_
 #define HASHTABLE_H_
 
+
+#include <iostream>
+using std::cout; using std::cin; using std::endl;
+
+#include <string>
+using std::string;
+
+#include <stdexcept>
+
+
 #include "../LogClass/LogClass.h"
+#include "./HashCell.h"
 
-#include <type_traits>
-
-template <bool B, class T=void>
-using enable_if_t = typename std::enable_if<B, T>::type;
-
-// template <class L, class R>
-// inline constexpr bool is_same_v = std::is_same_v<L, R>::value;
-using std::is_same_v;
-
-
-/****** Class Declarations ******/
+extern const size_t HASH_SPACE;
+extern uint64_t strhash(string);
 
 template <class DataT>
-class HashCell {
+class HashTable {
 public:
-  DataT         data;
-  LogRecord    *entry   = nullptr;
-  HashCell     *next    = nullptr;
-  
+  HashCell<DataT>  *table   = nullptr;
+  size_t            space   = 0;
+  axis_type         axis    = UNSPECIFIED;
+
+  HashFunc          hash;
+
 public:
-
-  inline HashCell() {
-    // NOTE: Handled by default initalizations already.
-    /* pass */ ;
-    return;
-  }  
-
-
-  ~HashCell() {
-    if (entry != nullptr || next != nullptr) {
-      string error_str = "HashCell::~HashCell() Dirty previous deletion!\n\t";
-      error_str.append("LogRecord ");
-      if (entry != nullptr) { error_str.append("NOT CLEAN!\n\t"); }
-      else { error_str.append("OK!\n\t"); }
-      error_str.append("HashCell ");
-      if (next != nullptr) { error_str.append("NOT CLEAN\n\t"); }
-      else { error_str.append("OK!"); }
-      throw std::runtime_error(error_str);    // NOTE: *CANNOT* be caught!
-                                              //       Process got terminated!
+  inline HashTable(size_t table_space   = HASH_SPACE,
+                   axis_type iter_axis  = TIME) {
+    if (table_space == 0) {
+      throw std::invalid_argument("HashTable::HashTable(...) "
+          "Provide the size to init the table!");
     }
+    if (iter_axis != TIME && iter_axis != SENDER) {
+      throw std::invalid_argument("HashTable::HashTable(...) "
+          "Unkown type of iteration axis!");
+    }
+    this->space = table_space;
+    this->axis  = iter_axis;
+    this->table = new HashCell<DataT>[this->space];
+    this->hash  = HashFunc(30, space, 0);
     return;
   }
 
-
-  template <class LogMessageT = DataT,
-      typename = enable_if_t<is_same_v<LogMessageT, LogMessage> > >
-  HashCell(const string &str) {
-    // NOTE: When you "refresh" a `HashCell` (ie `new` a `HashCell`), you might
-    //       want to directly init it with a log string.
-    //       You might tend to perform this kind of initalizations with some
-    //       prerequisites in mind:
-    //       - if you use the syntax:
-    //               `hash_table[log_str] = HashCell(log_str);`
-    //         you would suppose:
-    //           - the `HashCell`'s space is already allocated via a 
-    //             `HashTable` init, and the space is static (ie *NOT* `new`-ed)
-    //           - the `HashCell` is *NOT* occupied yet
-    //       - if you use the syntax:
-    //               `end_of_chain->next = new HashCell(new_log)`
-    //         you would suppose:
-    //           - along with the `new`-ed `HashCell`, there would also be a
-    //             first `LogDate` under `this->entry` `new`-ed
-    try {
-      data  = LogMessageT(str);
-      entry = new LogRecord(str, true);
-      entry->set_message(data);
-      next  = nullptr;
-    } catch (const std::runtime_error &e) {     // illegal `str`
-      throw e;
-    } catch (const std::bad_alloc &e) {
-      std::cerr << "HashCell::LogRecord allocation failed!" << std::endl;
-      throw e;
+  HashTable &insert(const string &str) {
+    // NOTE: Do *NOT* append_msg() here, do it in `StorageGraph`!
+    // ALG:  Using sequential address policy.
+    auto idx = static_cast<size_t>( hash(str) );
+    auto &cell = table[idx];
+    if (cell.occupied()) {
+      if (cell == str) {  // NOTE: auto string -> LogMessage
+        std::cerr << "HashTable::HashTable(..) Tempting to insert log that "
+                  << "already exists!" << std::endl;
+        // std::cerr << cell.data.get_message() << str << std::endl;
+        return *this;   // do nothing
+      }
+      // ALG: sequential address
+      try {
+        cell.next = new HashCell<DataT>(str);
+      } catch (std::bad_alloc &e) {
+        std::cerr << "HashTable::HashTable(...) Low memory!" << '\n';
+        throw e;
+      } catch (std::runtime_error &e) { // strange log string
+        // before `new`
+        cell.next = nullptr;
+        throw e;
+      }
+    }   // end of `cell.occupied()`
+    else {  // not occupied
+      cell.reset(str);  // copy
     }
-    return;
-  }
-
-
-  template <class StringT = DataT,
-      typename = enable_if_t<is_same_v<StringT, string> > >
-  HashCell(const string &str, const bool whole) {
-    // NOTE: The string template `HashCell` is meant to recieve senders' names!
-    //       An idea now I have, is that when passing a new log string to
-    //       `StorageGraph`, `HashTable<LogMessage>` got init-ed first, then the
-    //       `HashTable<string>`. So is to say that the space for `LogRecord`
-    //       will be managed by `HashTable<LogMessage>`, *NOT* this one!
-    //       You have to set the `entry` pointer field by yourself *AFTERWARDS*!
-    if (whole == true) {
-      data = LogMessage(str).sender; // don't bother with regex ANY MORE!
-    } else {
-      data = str;
-    }
-    entry   = nullptr;  // NOTE: Fix this *AFTERWARDS*!
-    next    = nullptr;
-    return;
-  }
-
-
-  inline HashCell &operator= (const HashCell &other) {
-    this->data  = other.data;
-    this->entry = other.entry;
-    this->next  = other.next;
     return *this;
   }
 
-  inline bool occupied();
+  inline HashCell<DataT> &operator[](string log_whole) {
+    auto *pcell = table + hash(log_whole);
+    while (pcell && *pcell != log_whole) {
+      pcell = pcell->next;
+    }
+    if (pcell == nullptr) {
+      throw std::runtime_error("HashTable::operator[] No match found!");
+    }
+    return *pcell;
+  }
+
+
 };
-
-template <> inline bool
-HashCell<LogMessage>::occupied() { return !data.notempty(); }
-
-template <> inline bool
-HashCell<string>::occupied() { return data.empty(); }
-
-
-
-class LogRecord::iterator {
-public:
-  LogRecord    *prec    = nullptr;
-  LogRecord    *one_prev= nullptr;
-  enum axis_type : unsigned char { TIME, SENDER };
-  unsigned char axis = TIME;
-
-public:
-  iterator(const axis_type=TIME);
-  iterator &operator++();
-  bool operator==(const iterator &other);
-};
-
-
-extern const size_t HASH_SPACE;
 
 #endif
+
