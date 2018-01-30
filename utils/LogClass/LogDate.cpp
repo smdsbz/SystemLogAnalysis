@@ -140,7 +140,7 @@ LogDate::operator+(const size_t sec) {
 
 
 string
-LogDate::str() {
+LogDate::str() const {
   try {
     string ret;
     ret.append(_month_ushort_to_str(time.mon) + " ");
@@ -172,4 +172,3 @@ LogDate::str() {
 //   cout << "<C-D> pressed" << endl;
 //   return 0;
 // }
-

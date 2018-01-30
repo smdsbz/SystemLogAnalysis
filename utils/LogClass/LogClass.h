@@ -12,13 +12,15 @@ using std::string; using std::to_string;
 
 
 /****** Regular Expressions ******/
+// bsd format: syslog -F bsd > target_file
 
 const string months[12] = {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
     "Aug", "Sep", "Oct", "Nov", "Dec"
 };
+
 const string _re_month = "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec";
-// bsd format: syslog -F bsd > target_file
+
 const string RE_DATE = string("(") + _re_month + ") ([1| ][0-9]) "
     + "([0-9]{2}):([0-9]{2}):([0-9]{2})";
 
@@ -46,8 +48,11 @@ public:
   } time;
 
 public:
+
   LogDate();
+
   LogDate(const string &re_mathed_date_string); // whole_log_string is fine
+
   inline bool operator==(const LogDate &other) {
     if (this->time.mon != other.time.mon) { return false; }
     if (this->time.dat != other.time.dat) { return false; }
@@ -56,9 +61,11 @@ public:
     if (this->time.sec != other.time.sec) { return false; }
     return true;
   }
+
   inline bool operator!=(const LogDate &other) {
     return !(*this == other);
   }
+
   inline bool operator> (const LogDate &other) {
     if (this->time.mon <= other.time.mon) { return false; }
     if (this->time.dat <= other.time.dat) { return false; }
@@ -67,9 +74,11 @@ public:
     if (this->time.sec <= other.time.sec) { return false; }
     return true;
   }
+
   inline bool operator<=(const LogDate &other) {
     return !(*this > other);
   }
+
   inline bool operator< (const LogDate &other) {
     if (this->time.mon >= other.time.mon) { return false; }
     if (this->time.dat >= other.time.dat) { return false; }
@@ -78,10 +87,14 @@ public:
     if (this->time.sec >= other.time.sec) { return false; }
     return true;
   }
+
   inline bool operator>=(const LogDate &other) { return !(*this < other); }
+
   LogDate &operator+ (const size_t sec);
+
   void _init_to_zero();
-  string str();
+
+  string str() const;
 };
 
 
@@ -89,17 +102,18 @@ public:
 
 class LogMessage {
 public:
-  // LogDate   date;
   string    host;
   string    sender;
-  // string    threadID;
   string    message;
-  // uint64_t  hash;
 
 public:
+
   LogMessage();
-  LogMessage(const string &log_string_whole);
+
+  LogMessage(const string &log_string_whole, const bool message_only=false);
+
   LogMessage(const LogMessage &copy);
+
   inline LogMessage &operator= (const LogMessage &other) {
     if (*this == other) { return *this; }
     this->host    = other.host;
@@ -107,17 +121,28 @@ public:
     this->message = other.message;
     return *this;
   }
+
   inline bool operator!=(const LogMessage &other) {
     if (this->host    != other.host   ) { return true; }
     if (this->sender  != other.sender ) { return true; }
     if (this->message != other.message) { return true; }    // costs time!
     return false;
-  }  
+  }
+
   inline bool operator==(const LogMessage &other) { return !(*this != other); }
+
   inline bool notempty() { return !(this->host.empty()); }
+
+  inline bool empty() { return !(this->notempty()); }
+
   void _init_to_zero();
+
   void append_msg(const string &more_message_str);
-  inline string get_message() { return string(message); }
+
+  inline string get_message() const { return string(this->message); }
+  inline string get_sender()  const { return string(this->sender); }
+  inline string get_host()    const { return string(this->host); }
+
 };
 
 
@@ -175,16 +200,22 @@ public:
   };
 
 public:
+
   inline LogRecord() { return; }
+
   LogRecord(const string &re_mathed_date_string, const bool whole=false);
+
   ~LogRecord();
+
   inline bool operator<=(const LogRecord &other) {
     // NOTE: relation defined as time relation
     return this->date <= other.date;
- }
+  }
+
   inline bool operator>=(const LogRecord &other) {
     return this->date >= other.date;
   }
+
   inline LogRecord &operator= (const LogRecord &other) {
     this->message   = other.message;
     this->date      = other.date;
@@ -192,23 +223,30 @@ public:
     this->sender_suc= other.sender_suc;
     return *this;
   }
+
   // called by Graph when inserting `LogRecord`s
   inline LogRecord &set_message(LogMessage &msg) {
     message = &msg;
     return *this;
   }
+
   inline LogRecord &set_time_successor(LogRecord &nxt) {
     time_suc = &nxt;
     return *this;
   }
+
   inline LogRecord &set_sender_successor(LogRecord &nxt) {
     sender_suc = &nxt;
     return *this;
   }
-  inline string get_message() { return message->message; }
-  inline string get_date() { return date.str(); }
+
+  inline string get_message() const { return this->message->get_message(); }
+  inline string get_date()    const { return this->date.str(); }
+  inline string get_sender()  const { return this->message->get_sender(); }
+
   /* iterator */
   inline iterator begin(axis_type axis=TIME) { return iterator(*this, axis); }
+
   inline iterator end(axis_type axis=TIME) { return iterator(nullptr, axis); }
 
 };
@@ -218,7 +256,6 @@ public:
 
 constexpr const size_t STRHASH_RANGE  = 30;
 constexpr const size_t HASH_SPACE     = 5000;
-
 
 class HashFunc {
 public:
@@ -262,4 +299,3 @@ public:
 
 
 #endif
-

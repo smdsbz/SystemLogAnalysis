@@ -20,6 +20,9 @@ using std::smatch; using std::ssub_match;
 void
 LogMessage::_init_to_zero() {
   /* pass */
+  this->host.erase();
+  this->sender.erase();
+  this->message.erase();
   return;
 }
 
@@ -30,10 +33,16 @@ LogMessage::LogMessage() {
 }
 
 
-LogMessage::LogMessage(const string &str) {
+LogMessage::LogMessage(const string &str, const bool message_only) {
   _init_to_zero();
   try {
-    regex re(RE_WHOLE);
+    regex re;
+    if (message_only == false) {    // log string with date
+      re = regex(RE_WHOLE);
+    } else {
+      message = str;
+      return;
+    }
     smatch matches;
     regex_match(str, matches, re);
     if (matches.size() != 5) {  // match failed
@@ -98,7 +107,7 @@ LogMessage::append_msg(const string &more) {
 
 // int main(int argc, const char *argv[]) {
 //   cout << "==== Test LogMessage ====" << endl;
-// 
+//
 //   auto sample = string("Jan  8 12:07:06 zhuxiaoguangs-MacBook-Air com.apple.x"
 //       "pc.launchd[1] (com.apple.preference.displays.MirrorDisplays): Service "
 //       "only ran for 0 seconds. Pushing respawn out by 10 seconds.");
@@ -116,11 +125,10 @@ LogMessage::append_msg(const string &more) {
 //   }
 //   info.append_msg("some other texts...");
 //   cout << info.message << '\n';
-// 
+//
 //   // for (size_t timer = 0; timer != 1E+4; ++timer) {
 //   //   cout << "hashed message ==> " << strhash(info.message) << '\n';
 //   // }
 //   cout << "end of test" << endl;
 //   return 0;
 // }
-

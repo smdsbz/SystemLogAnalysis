@@ -93,45 +93,61 @@ int main(int argc, const char *argv[]) {
     "Nov 13 14:17:34 zhuxiaoguangs-MacBook-Air login[5471]: DEAD_PROCESS: 5471 ttys000"
   };
 
-  auto headers = HashTable<LogMessage>(5000, TIME);
+  constexpr const size_t static_space = 7000;
+
+  auto headers = MessageTable(static_space);
 
   cout << "Default init passed!\n" << endl;
 
+  size_t cnt = 0;
+
   for (auto &each : sample) {
     // cout << "Inserting: " << each << endl;
-    headers.insert(each);
+    headers.insert(LogMessage(each, false));
+    ++cnt;
   }
 
-  cout << "Customized log message insertion passed!\n" << endl;
+  cout << "Customized log message insertion passed!" << endl;
+  cout << "\twith success rate of "
+       << static_cast<double>(cnt) / 81.0 * 100
+       << "%\n" << endl;
+  getchar();
 
+  cnt = 0;
 
   for (auto &each : sample) {
     try {
-      headers[each];
+      if (headers[LogMessage(each, false)].strict_equal(LogMessage(each, false))) {
+        ++cnt;
+      } else { cout << "Missed \"" << each << "\"" << endl; continue; }
     } catch (const std::runtime_error &e) {
-      std::cerr << "While finding " << each << " ";
-      std::cerr << e.what() << std::endl;
-      std::cerr << "Its hash is " << headers.hash(each) << ": "
+      std::cerr << "While finding " << each << '\n';
+      std::cerr << "Error thrown: " << e.what() << std::endl;
+      std::cerr << "Its hash was " << headers.hash(each) << ": "
                 << headers.table[headers.hash(each)].data.get_message() << std::endl;
+      std::cerr << endl;
+      getchar();
       continue;
     }
   }
 
-  cout << "log message hash search passed!\n" << endl;
+  cout << "log message hash search passed!" << endl;
+  cout << "\twith success rate of "
+       << static_cast<double>(cnt) / 81.0 * 100
+       << "%\n" << endl;
+  cnt = 0;
 
   cout << "- - - - HashFunc Evaluation - - - -" << endl;
-  size_t whole = 81;
   size_t inplace = 0;
-  for (size_t idx = 0; idx != 5000; ++idx) {
-    if (headers.table[idx].occupied()) { ++inplace; }
+  for (size_t idx = 0; idx != static_space; ++idx) {
+    if (headers[idx].occupied()) { ++inplace; }
   }
-  cout << "whole size: " << whole << endl;
+  cout << "whole size: " << 81U << endl;
   cout << "inplace count: " << inplace << endl;
   cout << "space efficienty := inplace / whole ==> "
-       << static_cast<double>(inplace) / static_cast<double>(whole) * 100
-       << "%" << endl;
+       << static_cast<double>(inplace) / 81.0 * 100
+       << "%\n" << endl;
 
 
   return 0;
 }
-
