@@ -25,7 +25,7 @@ public:
   inline _HashCell_LogMessage() { return; }
 
   ~_HashCell_LogMessage() {
-    if (entry != nullptr || next != nullptr) {
+    if (entry != nullptr) {
       string error_str = ("_HashCell_LogMessage::~_HashCell_LogMessage() "
       "Dirty previous deletion!\n\t");
       error_str.append("LogRecord ");
@@ -34,9 +34,6 @@ public:
         cout << entry->get_message() << endl;
       }
       else { error_str.append("OK!\n\t"); }
-      error_str.append("_HashCell_LogMessage ");
-      if (next != nullptr) { error_str.append("NOT CLEAN\n\t"); }
-      else { error_str.append("OK!"); }
       throw std::runtime_error(error_str);    // NOTE: *CANNOT* be caught!
       //       Process got terminated!
     }
@@ -102,7 +99,7 @@ public:
   inline _HashCell_string() { return; }
 
   ~_HashCell_string() {
-    if (entry != nullptr || next != nullptr) {
+    if (entry != nullptr) {
       string error_str = ("_HashCell_string::~_HashCell_string() "
       "Dirty previous deletion!\n\t");
       error_str.append("LogRecord ");
@@ -120,6 +117,14 @@ public:
     return;
   }
 
+  inline _HashCell_string &join_rec_to_end(const LogRecord &rec) {
+    if (this->entry == nullptr) {   // first record ever
+      this->entry = &rec;
+    }
+    this->end = &rec;
+    return *this;
+  }
+
   inline _HashCell_string &reset_cell(const string &str) {
     if (entry != nullptr || next != nullptr) {
       throw std::runtime_error("_HashCell_string::reset_cell() "
@@ -130,6 +135,7 @@ public:
   }
 
   inline bool operator==(const string &o) { return this->data == o; }
+  inline bool operator!=(const string &o) { return this->data != o; }
 
   inline _HashCell_string &set_entry(LogRecord *rec) {
     if (rec->get_sender() != data) {
@@ -155,7 +161,8 @@ public:
   }
 
   inline bool occupied() { return !this->data.empty(); }
-
 };
+
+
 
 #endif

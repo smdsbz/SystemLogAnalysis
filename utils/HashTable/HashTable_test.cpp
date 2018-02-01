@@ -93,7 +93,7 @@ int main(int argc, const char *argv[]) {
     "Nov 13 14:17:34 zhuxiaoguangs-MacBook-Air login[5471]: DEAD_PROCESS: 5471 ttys000"
   };
 
-  constexpr const size_t static_space = 7000;
+  constexpr const size_t static_space = 5000;
 
   auto headers = MessageTable(static_space);
 

@@ -13,18 +13,16 @@ using std::string;
 #include "./HashCell.h"
 
 
-extern uint64_t strhash(string);
-
 /****** HashTable : Class Declaration and Definitioin ******/
 
 class MessageTable {
 public:
   _HashCell_LogMessage *table = nullptr;
-  size_t      space = 5000;
-  HashFunc    hash  = HashFunc(30, 5000, 0);
+  size_t    space = 5000;
+  HashFunc  hash  = HashFunc(30, 5000, 0);
 
-  LogRecord  *global_begin = nullptr;
-  LogRecord  *global_end   = nullptr;
+  LogRecord *global_begin = nullptr;
+  LogRecord *global_end   = nullptr;
 
 public:
 
@@ -38,6 +36,22 @@ public:
     this->hash = HashFunc(30, this->space, 0);
     this->global_begin = nullptr;
     this->global_end = nullptr;
+    return;
+  }
+
+  ~MessageTable() {
+    // free cells in chain
+    for (size_t cell_cur = 0; cell_cur != this->space; ++cell_cur) {
+      auto *pcell = table + cell_cur;
+      while (pcell->next != nullptr) {
+        auto *to_free = pcell->next;
+        pcell->next = to_free->next;
+        // to_free->next = nullptr;
+        delete to_free;
+      }
+    }
+    // free chain heads in `this->table`
+    delete [] this->table;
     return;
   }
 
@@ -64,7 +78,8 @@ public:
         pcell = pcell->next;
       } // end of while ==> pcell->next == nullptr
       try {
-        pcell->next = new _HashCell_LogMessage();
+        // pcell->next = new _HashCell_LogMessage();
+        pcell->set_next(new _HashCell_LogMessage());
       } catch (const std::bad_alloc &e) {
         cout << "Low Memory! Space allocation failed while inserting:\n"
              << msgobj.get_message() << endl;
@@ -92,7 +107,7 @@ public:
   }
 
   _HashCell_LogMessage &operator[](const string &msg) {
-    auto *pcell = this->table + hash(msg);
+    auto pcell = this->table + hash(msg);
     while ( pcell && (pcell->value_equal(msg) == false) ) {
       pcell = pcell->next;
     }
@@ -112,8 +127,89 @@ public:
     return this->table[idx];
   }
 
+  inline void set_begin(LogRecord *beg) { this->global_begin = beg; }
+  inline void set_end(LogRecord *end) { this->global_end = end; }
 };
 
 
+
+class SenderTable {
+public:
+  _HashCell_string     *table = nullptr;
+  size_t    space = 200;
+  HashFunc  hash = HashFunc(10, 200, 0);
+
+public:
+  
+  inline SenderTable(size_t table_size = 200) {
+    if (table_size == 0) {
+      throw std::invalid_argument("SenderTable::SenderTable(...)::table_size "
+          "Provide an appropriate size to init table!");
+    }
+    this->space = table_size;
+    this->table = new _HashCell_string[this->space];
+    this->hash = HashFunc(10, this->space, 0);
+    return;
+  }
+
+  inline ~SenderTable() { delete [] this->table; }
+
+  /* 函数名称：link
+   * 函数参数：已存在的 LogRecord 的引用
+   * 函数功能：将该 LogRecord 添加至 SenderTable 的关系网中
+   * 返回值：  对应该 LogRecord 的发送者在 SenderTable 中的存储位置
+   */
+  _HashCell_string &link(const LogRecord &rec) {
+    auto pmsg = rec.message;
+    if (pmsg == nullptr) {
+      throw std::runtime_error("SenderTable::link() Invalid `massage` field!");
+    }
+    string sender_name = rec.get_sender();
+    size_t idx = this->hash(sender_name);
+    if (idx >= this->space) {
+      throw std::range_error("SenderTable::insert() HashFunc miscalculated!");
+    }
+    // do linking
+    auto &sndr_cell = this->table[idx];
+    if (sndr_cell.occupied()) {
+      auto pcell = &sndr_cell;
+      while (pcell->next != nullptr) {
+        if (*(pcell->next) == sender_name) {    // sender registered
+          // no need for new cell
+          pcell->next->join_rec_to_end(rec);
+          return *(pcell->next);
+        }
+        // sender not found *YET*
+        pcell = pcell->next;    // venture forth
+      } // end of while
+      // still not found? need new cell
+      try {
+        pcell->next = new _HashCell_string();
+      } catch (const std::bad_alloc &e) {
+        cout << "Low Memory! Space allocation failed while linking to "
+             << sender_name << endl;
+      }
+      pcell->next->reset_cell(sender_name);
+      pcell->next->join_rec_to_end(rec);
+      return *(pcell->next);
+    } else {    // not occupied
+      sndr_cell.reset_cell(rec);
+      sndr_cell.join_rec_to_end(rec);
+      return sndr_cell;
+    }
+    throw std::logic_error("SenderTable::link() Jumped out of if-else!");
+  }
+
+  _HashCell_string &operator[](const string &sender) {
+    auto pcell = this->table + hash(sender);
+    while (pcell && (pcell != sender)) { pcell = pcell->next; }
+    if (pcell == nullptr) {
+      throw std::overflow_error(string("SenderTable::operator[sender] ")
+          + "No match found for: " + sender);
+    }
+    return *pcell;
+  }
+
+};
 
 #endif
