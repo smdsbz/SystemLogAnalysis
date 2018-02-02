@@ -18,6 +18,7 @@ class _HashCell_LogMessage {
 public:
   LogMessage    data;
   LogRecord    *entry = nullptr;
+  LogRecord    *end   = nullptr;
   _HashCell_LogMessage *next = nullptr;
 
 public:
@@ -46,6 +47,17 @@ public:
           "Dirty previous deletion! Will break chain relations!");
     }
     data = msgobj;  // value copy
+    return *this;
+  }
+
+  inline _HashCell_LogMessage &join_rec_to_end(const LogRecord *prec) {
+    if (this->entry == nullptr) {   // first ever
+      this->entry = prec;
+      this->end = prec;
+      return *this;
+    }   // not first
+    this->end->time_suc = prec;
+    this->end = prec;
     return *this;
   }
 
@@ -117,11 +129,13 @@ public:
     return;
   }
 
-  inline _HashCell_string &join_rec_to_end(const LogRecord &rec) {
+  inline _HashCell_string &join_rec_to_end(const LogRecord *prec) {
     if (this->entry == nullptr) {   // first record ever
-      this->entry = &rec;
+      this->entry = prec;
+      this->end = prec;
     }
-    this->end = &rec;
+    this->end->sender_suc = prec;
+    this->end = prec;
     return *this;
   }
 

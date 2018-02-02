@@ -264,6 +264,7 @@ public:
   unsigned char selection = 0;
 
 public:
+
   inline HashFunc(size_t hrange = STRHASH_RANGE,
                   size_t psize  = HASH_SPACE,
                   unsigned char slct = 0) {
@@ -294,6 +295,7 @@ public:
                    * static_cast<uint8_t>('0')) )
            % this->pool_size;
   }
+
 };
 
 

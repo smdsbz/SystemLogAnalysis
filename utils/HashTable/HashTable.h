@@ -61,21 +61,29 @@ public:
    * 返回值：  插入成功返回插入位置的引用，否则抛出对应错误
    */
   _HashCell_LogMessage &insert(const LogMessage &msgobj) {
+    // get index
     size_t idx = this->hash(msgobj.get_message());
     if (idx >= this->space) {
       throw std::range_error("MessageTable::insert() HashFunc miscalculated!");
     }
+    // find place to insert
     auto &msg_cell = this->table[idx];
     if (msg_cell.occupied()) {
+      if (msg_cell.strict_equal(msgobj)) {  // check if exist
+        cout << "Log \"" << msgobj.get_message() << "\" already in table!"
+             << endl;
+        return msg_cell;    // HACK: It doesn't matter, just make sure
+                            //       there *IS* one
+      }
       auto pcell = &msg_cell;
       while (pcell->next != nullptr) {
-        if (pcell->next->strict_equal(msgobj)) {  // already inserted
+        if (pcell->next->strict_equal(msgobj)) {  // check if exsit
           cout << "Log \"" << msgobj.get_message() << "\" already in table!"
                << endl;
           return *(pcell->next);
         }
-        // not in table || value_equal ==> venture forth!
-        pcell = pcell->next;
+        // not this one ==> venture forth!
+       pcell = pcell->next;
       } // end of while ==> pcell->next == nullptr
       try {
         // pcell->next = new _HashCell_LogMessage();
@@ -83,7 +91,9 @@ public:
       } catch (const std::bad_alloc &e) {
         cout << "Low Memory! Space allocation failed while inserting:\n"
              << msgobj.get_message() << endl;
+        throw e;
       }
+      // new `_HashCell_LogMessage` alloced at `pcell->next`
       pcell->next->reset_cell(msgobj);
       return *(pcell->next);
     } else {  // msg_cell.occupied() == false
@@ -91,6 +101,14 @@ public:
       return msg_cell;
     }
     throw std::logic_error("MessageTable::insert() Jumped out of if-else!");
+  }
+
+  inline MessageTable &join_rec_to_end(const LogRecord *prec) {
+    if (this->global_begin == nullptr) {
+      this->global_begin = prec;
+    }
+    this->global_end = prec;
+    return *this;
   }
 
   _HashCell_LogMessage &operator[](const LogMessage &msgobj) {
@@ -160,11 +178,16 @@ public:
    * 返回值：  对应该 LogRecord 的发送者在 SenderTable 中的存储位置
    */
   _HashCell_string &link(const LogRecord &rec) {
+    // NOTE: There's actually no way of ensuring the `rec` isn't repeating!
+    //       So here I pretend that my users know what they are doing...
+    // get message address
     auto pmsg = rec.message;
     if (pmsg == nullptr) {
       throw std::runtime_error("SenderTable::link() Invalid `massage` field!");
     }
+    // get copy of sender_name
     string sender_name = rec.get_sender();
+    // get insert position
     size_t idx = this->hash(sender_name);
     if (idx >= this->space) {
       throw std::range_error("SenderTable::insert() HashFunc miscalculated!");
@@ -172,15 +195,19 @@ public:
     // do linking
     auto &sndr_cell = this->table[idx];
     if (sndr_cell.occupied()) {
+      if (sndr_cell == sender_name) {   // search chain head
+        sndr_cell.join_rec_to_end(rec);
+        return sndr_cell;
+      } // not chain head, continue searching
       auto pcell = &sndr_cell;
       while (pcell->next != nullptr) {
-        if (*(pcell->next) == sender_name) {    // sender registered
+        if (*(pcell->next) == sender_name) {    // sender found
           // no need for new cell
           pcell->next->join_rec_to_end(rec);
           return *(pcell->next);
         }
-        // sender not found *YET*
-        pcell = pcell->next;    // venture forth
+        // sender not found *YET*, venture forth
+        pcell = pcell->next;
       } // end of while
       // still not found? need new cell
       try {
@@ -188,6 +215,7 @@ public:
       } catch (const std::bad_alloc &e) {
         cout << "Low Memory! Space allocation failed while linking to "
              << sender_name << endl;
+        throw e;
       }
       pcell->next->reset_cell(sender_name);
       pcell->next->join_rec_to_end(rec);
@@ -213,3 +241,4 @@ public:
 };
 
 #endif
+
