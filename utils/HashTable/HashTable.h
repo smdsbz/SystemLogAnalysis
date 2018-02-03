@@ -103,7 +103,7 @@ public:
     throw std::logic_error("MessageTable::insert() Jumped out of if-else!");
   }
 
-  inline MessageTable &join_rec_to_end(const LogRecord *prec) {
+  inline MessageTable &join_rec_to_end(LogRecord *prec) {
     if (this->global_begin == nullptr) {
       this->global_begin = prec;
     }
@@ -177,7 +177,7 @@ public:
    * 函数功能：将该 LogRecord 添加至 SenderTable 的关系网中
    * 返回值：  对应该 LogRecord 的发送者在 SenderTable 中的存储位置
    */
-  _HashCell_string &link(const LogRecord &rec) {
+  _HashCell_string &link(LogRecord &rec) {
     // NOTE: There's actually no way of ensuring the `rec` isn't repeating!
     //       So here I pretend that my users know what they are doing...
     // get message address
@@ -196,14 +196,14 @@ public:
     auto &sndr_cell = this->table[idx];
     if (sndr_cell.occupied()) {
       if (sndr_cell == sender_name) {   // search chain head
-        sndr_cell.join_rec_to_end(rec);
+        sndr_cell.join_rec_to_end(&rec);
         return sndr_cell;
       } // not chain head, continue searching
       auto pcell = &sndr_cell;
       while (pcell->next != nullptr) {
         if (*(pcell->next) == sender_name) {    // sender found
           // no need for new cell
-          pcell->next->join_rec_to_end(rec);
+          pcell->next->join_rec_to_end(&rec);
           return *(pcell->next);
         }
         // sender not found *YET*, venture forth
@@ -218,11 +218,11 @@ public:
         throw e;
       }
       pcell->next->reset_cell(sender_name);
-      pcell->next->join_rec_to_end(rec);
+      pcell->next->join_rec_to_end(&rec);
       return *(pcell->next);
     } else {    // not occupied
-      sndr_cell.reset_cell(rec);
-      sndr_cell.join_rec_to_end(rec);
+      sndr_cell.reset_cell(sender_name);
+      sndr_cell.join_rec_to_end(&rec);
       return sndr_cell;
     }
     throw std::logic_error("SenderTable::link() Jumped out of if-else!");
@@ -230,7 +230,7 @@ public:
 
   _HashCell_string &operator[](const string &sender) {
     auto pcell = this->table + hash(sender);
-    while (pcell && (pcell != sender)) { pcell = pcell->next; }
+    while (pcell && (*pcell != sender)) { pcell = pcell->next; }
     if (pcell == nullptr) {
       throw std::overflow_error(string("SenderTable::operator[sender] ")
           + "No match found for: " + sender);

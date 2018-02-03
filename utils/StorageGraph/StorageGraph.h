@@ -48,7 +48,7 @@ public:
     }
     // associate `LogRecord` and `LogMessage`
     //   or `link()` would fail!
-    prec->set_message(&msg);
+    prec->set_message(msg);
     try {
       // NOTE: The following two lines may fail due to cell existing,
       //       but it actually won't make a difference! 'Cause it ensures you
@@ -56,8 +56,8 @@ public:
       //       you anyway (returned as reference to cell)!
       //       Just pretend that every `insert()` or `link()` is new to
       //       that operand.
-      auto msg_cell = this->messages->insert(msg);  // may fail,
-      auto sndr_cell = this->senders->link(prec);   // but finds cell for you!
+      auto &msg_cell = this->messages->insert(msg);  // may fail,
+      auto &sndr_cell = this->senders->link(*prec);  // but finds cell for you!
       // add `LogRecord` to `Storage`
       // NOTE: The following tow lines requires that `log` passed hasn't
       //       appeared before.

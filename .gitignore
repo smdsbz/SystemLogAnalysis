@@ -38,3 +38,5 @@
 # PowerPoint Files
 *.pptx
 
+# Debug Files
+*.dSYM/

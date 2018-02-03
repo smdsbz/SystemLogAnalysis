@@ -50,7 +50,7 @@ public:
     return *this;
   }
 
-  inline _HashCell_LogMessage &join_rec_to_end(const LogRecord *prec) {
+  inline _HashCell_LogMessage &join_rec_to_end(LogRecord *prec) {
     if (this->entry == nullptr) {   // first ever
       this->entry = prec;
       this->end = prec;
@@ -129,7 +129,7 @@ public:
     return;
   }
 
-  inline _HashCell_string &join_rec_to_end(const LogRecord *prec) {
+  inline _HashCell_string &join_rec_to_end(LogRecord *prec) {
     if (this->entry == nullptr) {   // first record ever
       this->entry = prec;
       this->end = prec;
