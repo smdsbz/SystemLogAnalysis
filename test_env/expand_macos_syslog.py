@@ -13,6 +13,8 @@ with open(infile_name, 'rt') as infile:
         outfile.write(last)
         curr = infile.readline()
 
+        seen = []
+
         while curr:
             pattern = '^--- last message repeated ([0-9]+) time[s]? ---$'
             re_match = re.search(pattern, curr)
@@ -22,5 +24,11 @@ with open(infile_name, 'rt') as infile:
             else:
                 outfile.write(curr)
 
+                # NOTE: Ignoring log that span across multiple lines
+                if curr not in seen:
+                    seen.append(curr)
+
             last, curr = curr, infile.readline()
+
+print('Unique count:', len(seen))
 

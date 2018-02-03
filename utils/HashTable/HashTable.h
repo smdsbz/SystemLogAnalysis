@@ -62,24 +62,27 @@ public:
    */
   _HashCell_LogMessage &insert(const LogMessage &msgobj) {
     // get index
-    size_t idx = this->hash(msgobj.get_message());
+    size_t idx = this->hash(msgobj.get_message() + msgobj.get_sender());
+    cout << "hash val recieved was: " << idx << " ==> "
+         << msgobj.get_message().substr(0, 40) << '\n';
     if (idx >= this->space) {
       throw std::range_error("MessageTable::insert() HashFunc miscalculated!");
     }
+    /* cout << idx << ": " << msgobj.get_message().substr(0, 40) << endl; */
     // find place to insert
     auto &msg_cell = this->table[idx];
     if (msg_cell.occupied()) {
       if (msg_cell.strict_equal(msgobj)) {  // check if exist
-        cout << "Log \"" << msgobj.get_message() << "\" already in table!"
-             << endl;
+        /* cout << "Log \"" << msgobj.get_message() << "\" already in table!" */
+        /*      << endl; */
         return msg_cell;    // HACK: It doesn't matter, just make sure
                             //       there *IS* one
       }
       auto pcell = &msg_cell;
       while (pcell->next != nullptr) {
         if (pcell->next->strict_equal(msgobj)) {  // check if exsit
-          cout << "Log \"" << msgobj.get_message() << "\" already in table!"
-               << endl;
+          /* cout << "Log \"" << msgobj.get_message() << "\" already in table!" */
+          /*      << endl; */
           return *(pcell->next);
         }
         // not this one ==> venture forth!

@@ -21,17 +21,17 @@ const string months[12] = {
 
 const string _re_month = "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec";
 
-const string RE_DATE = string("(") + _re_month + ") ([1| ][0-9]) "
+const string RE_DATE = string("(") + _re_month + ") ([1-3| ][0-9]) "
     + "([0-9]{2}):([0-9]{2}):([0-9]{2})";
 
 const string RE_WHOLE = (string("((?:") + _re_month
-    + ") [1| ][0-9] [0-9]{2}:[0-9]{2}:[0-9]{2}) ")      // date
-                                //   eg "Jan  1 19:43:19"
-    + "([a-zA-Z\\-]+) "         // host name (lower/upper and short-dash)
-                                //   eg "zhuxiaoguangs-MacBook-Air"
-    + "([a-z\\.]+)\\[[0-9]+\\][:]? "    // sender (lower) and threadID
-                                        //   eg "steam_osx[584]"
-    + "([^\n]+)$";              // message (anything hence to the eol)
+    + ") [1-3| ][0-9] [0-9]{2}:[0-9]{2}:[0-9]{2}) ")    // date
+                            //   eg "Jan  1 19:43:19"
+    + "([a-zA-Z\\-]+) "     // host name (lower/upper and short-dash)
+                            //   eg "zhuxiaoguangs-MacBook-Air"
+    + "([^\n]+)\\[[0-9]+\\][:]? "   // sender (lower) and threadID
+                                    //   eg "steam_osx[584]"
+    + "([^\n]+)$";          // message (anything hence to the eol)
 
 
 /****** Class Declarations ******/
@@ -257,6 +257,8 @@ public:
 constexpr const size_t STRHASH_RANGE  = 30;
 constexpr const size_t HASH_SPACE     = 5000;
 
+#include <cmath>
+
 class HashFunc {
 public:
   size_t hash_range = STRHASH_RANGE;
@@ -281,19 +283,35 @@ public:
     return *this;
   }
 
-  uint64_t operator()(const string &str) {
-    uint64_t ret = 0UL;
-    uint8_t  multiplier = (this->pool_size / this->hash_range / 26U) % 10U;
-    auto cur = str.end(); --cur;
+  inline uint64_t operator()(const string &str) {
+    int64_t ret = 0;
+    constexpr const uint8_t multiplier = 10U;
+    // sum from head
+    auto end = str.end();
     auto beg = str.begin();
-    for (size_t max_range = this->hash_range;
-         cur != beg && max_range != 0;
-         --cur, --max_range) {
-      ret += static_cast<uint8_t>(*cur) * multiplier;
+    for (size_t max_range = 0;
+         max_range != this->hash_range && beg != end;
+         ++max_range, ++beg) {
+      ret += static_cast<uint8_t>(*beg) * multiplier;
     }
-    return (ret - (this->hash_range
-                   * static_cast<uint8_t>('0')) )
-           % this->pool_size;
+    // sum from tail
+    end = str.end(); --end;
+    beg = str.begin();
+    for (size_t max_range = this->hash_range;
+         max_range != 0 && beg != end;
+         --end, --max_range) {
+      ret += static_cast<uint8_t>(*end) * multiplier;
+    }
+    // `ret` is sum of ASCII chars
+    ret -= this->hash_range * multiplier * 2
+           * (static_cast<int64_t>('a') - 6U);
+    // `ret` is deviation from 0 (expected)
+    // HACK: use enhanced sigmoid to map deviation range to index range
+    double shived = (
+      static_cast<double>(this->pool_size - 1) 
+      / ( 1.0 + exp(-2.8 * 1E-8 * static_cast<double>(this->pool_size) * ret) )
+    );
+    return static_cast<uint64_t>(shived);
   }
 
 };

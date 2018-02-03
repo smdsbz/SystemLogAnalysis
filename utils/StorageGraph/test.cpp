@@ -95,13 +95,34 @@ int main(int argc, char **argv) {
     "Nov 13 14:17:34 zhuxiaoguangs-MacBook-Air login[5471]: DEAD_PROCESS: 5471 ttys000"
   };
 
-  auto storage = Storage(5000, 200);
+  size_t MESSAGE_TABLE_SIZE = 5000;
+  auto storage = Storage(MESSAGE_TABLE_SIZE, 200);
 
-  for (auto &each : sample) {
-    storage._time_sequence_promised_add(each);
+  /* for (auto &each : sample) { */
+  /*   storage._time_sequence_promised_add(each); */
+  /* } */
+
+  /* cout << "Storage::_time_sequence_promised_add() passed!" << endl; */
+
+  storage.read_from_file("../../test_env/modified_syslog.txt");
+  cout << "Storage::read_from_file() passed!" << endl;
+  /* cout << "Press <Enter> to reveal stats\n"; getchar(); */
+
+  size_t inplace_cnt = 0;
+  for (size_t idx = 0; idx != MESSAGE_TABLE_SIZE; ++idx) {
+    if ((*storage.messages)[idx].occupied()) { ++inplace_cnt; }
   }
+  cout << "MESSAGE_TABLE_SIZE ==> " << MESSAGE_TABLE_SIZE << endl;
+  cout << "inplace_cnt ==> " << inplace_cnt << endl;
+  cout << "Sp. Eff. ==> "
+       << static_cast<double>(inplace_cnt)
+          / static_cast<double>(MESSAGE_TABLE_SIZE)
+          * 100.0
+       << "%" << endl;
 
-  cout << "Storage._time_sequence_promised_add() passed!" << endl;
+  // TODO: Stat of unique log count
+
+  cout << "End of Test!" << endl;
 
   return 0;
 
