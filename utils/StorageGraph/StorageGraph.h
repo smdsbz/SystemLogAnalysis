@@ -14,7 +14,8 @@ using std::fstream; using std::getline;
 
 #include "../LogClass/LogClass.h"
 #include "../HashTable/HashTable.h"
-
+#include "../UIGadgets/UIGadgets.h"
+using UIGadgets::ProgressBar;
 
 /****** StorageGraph : Class Declaration and Definitioin ******/
 
@@ -29,6 +30,19 @@ public:
                  size_t sdrtable_size = 200) {
     messages = new MessageTable(msgtable_size);
     senders = new SenderTable(sdrtable_size);
+    return;
+  }
+
+  ~Storage() {
+    // NOTE: Only have to clean `LogRecord`s, `Cell`s will be handled by
+    //       `Table`s
+    LogRecord *beg = this->messages->global_begin;
+    LogRecord *to_free = nullptr;
+    while (beg != nullptr) {
+      to_free = beg;
+      beg = beg->time_suc;
+      delete to_free;
+    }
     return;
   }
 
@@ -54,8 +68,8 @@ public:
       //       but it actually won't make any difference! 'Cause it ensures you
       //       that the cells exist anyway, and it even finds the cell for
       //       you (returned as reference to cell)!
-      //       Just pretend that every `insert()` or `link()` is new to
-      //       that operand.
+      //       Just pretend that every `insert()` or `link()` is the first
+      //       call to that operand.
       auto &msg_cell = this->messages->insert(msg);  // may fail,
       // associate `LogRecord` and `LogMessage`
       //   or `link()` would fail!
@@ -68,11 +82,30 @@ public:
       this->messages->join_rec_to_end(prec);
       sndr_cell.join_rec_to_end(prec);
     } catch (const std::bad_alloc &e) { throw e; }
+    // set global pos indicators
+    if (this->messages->global_begin == nullptr) {
+      this->messages->global_begin = prec;
+    }
+    this->messages->global_end = prec;
     return *prec;
   }
 
   Storage &read_from_file(const string &filename) {
     fstream file;
+    // get filesize - for progress bar
+    size_t char_cnt = 0;
+    file.open(filename, std::ios::binary | std::ios::in);
+    if (file.is_open()) {
+      auto fbeg_pos = file.tellg();
+      file.seekg(0, std::ios::end);
+      auto fend_pos = file.tellg();
+      char_cnt = (fend_pos - fbeg_pos) / sizeof(char);
+      file.close();
+    } else {    // failed to open file
+      throw std::runtime_error(string("Storage::read_from_file() Failed to ")
+          + "open file \"" + filename + "\"!");
+    }
+    // read content
     file.open(filename, std::ios::in);
     if (file.is_open()) {
       /* size_t cnt = 1; */
@@ -82,8 +115,15 @@ public:
       LogRecord *prec = nullptr;    // HACK: But instead, I'll store the
                                     //       `LogRecord` for convenience.
       LogMessage msgbuf;
+      size_t cur_char_cnt = 0;
+      size_t log_cnt = 0;
+      auto pbar = ProgressBar(80);
+      pbar.draw_on_current_line(true, 0);
       while (getline(file, line)) {
-        /* cout << "line ==> " << line << endl; */
+        cur_char_cnt += line.length();
+        if (log_cnt % 5 == 0) {
+          pbar.draw_on_current_line(true, cur_char_cnt * 100 / char_cnt);
+        }
         try {
           msgbuf = LogMessage(line);
         } catch (const std::runtime_error &e) {
@@ -101,8 +141,11 @@ public:
         }
         // legit log! added to msgbuf
         prec = &(this->_time_sequence_promised_add(line));
+        log_cnt += 1;
       } // end of input while-loop
       file.close();
+      pbar.draw_done();
+      /* cout << log_cnt << " logs read!" << endl; */
     } else {    // failed to open
       throw std::runtime_error(string("Storage::read_from_file() Failed to ")
           + "open file \"" + filename + "\"!");

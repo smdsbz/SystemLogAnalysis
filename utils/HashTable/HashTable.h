@@ -63,8 +63,8 @@ public:
   _HashCell_LogMessage &insert(const LogMessage &msgobj) {
     // get index
     size_t idx = this->hash(msgobj.get_message() + msgobj.get_sender());
-    cout << "hash val recieved was: " << idx << " ==> "
-         << msgobj.get_message().substr(0, 40) << '\n';
+    /* cout << "hash val recieved was: " << idx << " ==> " */
+    /*      << msgobj.get_message().substr(0, 40) << '\n'; */
     if (idx >= this->space) {
       throw std::range_error("MessageTable::insert() HashFunc miscalculated!");
     }

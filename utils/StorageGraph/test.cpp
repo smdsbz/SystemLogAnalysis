@@ -98,13 +98,11 @@ int main(int argc, char **argv) {
   size_t MESSAGE_TABLE_SIZE = 5000;
   auto storage = Storage(MESSAGE_TABLE_SIZE, 200);
 
-  /* for (auto &each : sample) { */
-  /*   storage._time_sequence_promised_add(each); */
-  /* } */
+  auto filename = string("../../test_env/modified_syslog.txt");
 
-  /* cout << "Storage::_time_sequence_promised_add() passed!" << endl; */
+  cout << "Reading from file \"" << filename << "\"" << endl;
 
-  storage.read_from_file("../../test_env/modified_syslog.txt");
+  storage.read_from_file(filename);
   cout << "Storage::read_from_file() passed!" << endl;
   /* cout << "Press <Enter> to reveal stats\n"; getchar(); */
 
@@ -119,8 +117,6 @@ int main(int argc, char **argv) {
           / static_cast<double>(MESSAGE_TABLE_SIZE)
           * 100.0
        << "%" << endl;
-
-  // TODO: Stat of unique log count
 
   cout << "End of Test!" << endl;
 
