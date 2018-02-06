@@ -106,11 +106,19 @@ public:
     throw std::logic_error("MessageTable::insert() Jumped out of if-else!");
   }
 
+  /* 函数名称：join_rec_to_end
+   * 函数参数：要注册的 `LogRecord` 对象的地址
+   * 函数功能：注册 `LogRecord` 的时间继承关系
+   * 返回值：  操作成功返回自身引用
+   */
   inline MessageTable &join_rec_to_end(LogRecord *prec) {
-    if (this->global_begin == nullptr) {
+    // Set time axis successor
+    if (this->global_begin == nullptr) {    // first rec ever
       this->global_begin = prec;
+    } else {    // not first rec - this->global_end != nullptr
+      this->global_end->time_suc = prec;
     }
-    this->global_end = prec;
+    this->global_end = prec;    // reset end
     return *this;
   }
 

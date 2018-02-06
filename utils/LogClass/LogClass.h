@@ -154,6 +154,7 @@ public:
   LogMessage   *message     = nullptr;
   LogDate       date;
   LogRecord    *time_suc    = nullptr;
+  LogRecord    *msg_suc     = nullptr;
   LogRecord    *sender_suc  = nullptr;
 
   class iterator {
@@ -232,6 +233,11 @@ public:
 
   inline LogRecord &set_time_successor(LogRecord &nxt) {
     time_suc = &nxt;
+    return *this;
+  }
+
+  inline LogRecord &set_message_successor(LogRecord &nxt) {
+    this->msg_suc = &nxt;
     return *this;
   }
 

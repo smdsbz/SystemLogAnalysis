@@ -78,15 +78,15 @@ public:
       // add `LogRecord` to `Storage`
       // NOTE: The following tow lines requires that `log` passed hasn't
       //       appeared before.
-      msg_cell.join_rec_to_end(prec);
-      this->messages->join_rec_to_end(prec);
-      sndr_cell.join_rec_to_end(prec);
+      this->messages->join_rec_to_end(prec);    // set `time_suc`
+      msg_cell.join_rec_to_end(prec);           // set `msg_suc`
+      sndr_cell.join_rec_to_end(prec);          // set `sender_suc`
     } catch (const std::bad_alloc &e) { throw e; }
-    // set global pos indicators
-    if (this->messages->global_begin == nullptr) {
-      this->messages->global_begin = prec;
-    }
-    this->messages->global_end = prec;
+    /* // set global pos indicators */
+    /* if (this->messages->global_begin == nullptr) { */
+    /*   this->messages->global_begin = prec; */
+    /* } */
+    /* this->messages->global_end = prec; */
     return *prec;
   }
 
@@ -108,7 +108,6 @@ public:
     // read content
     file.open(filename, std::ios::in);
     if (file.is_open()) {
-      /* size_t cnt = 1; */
       // NOTE: Some log may span across multiple lines. So you have to store
       //       the previous line, in case you have to append to it later.
       string line;
@@ -121,8 +120,9 @@ public:
       pbar.draw_on_current_line(true, 0);
       while (getline(file, line)) {
         cur_char_cnt += line.length();
-        if (log_cnt % 5 == 0) {
-          pbar.draw_on_current_line(true, cur_char_cnt * 100 / char_cnt);
+        if (log_cnt % 300 == 0) {   // NOTE: Display too often may cause
+                                    //       performance issue!
+          pbar.draw_on_current_line(true, cur_char_cnt * 100 / char_cnt + 1);
         }
         try {
           msgbuf = LogMessage(line);

@@ -20,6 +20,7 @@ public:
   LogRecord    *entry = nullptr;
   LogRecord    *end   = nullptr;
   _HashCell_LogMessage *next = nullptr;
+  size_t        count = 0;
 
 public:
 
@@ -51,13 +52,15 @@ public:
   }
 
   inline _HashCell_LogMessage &join_rec_to_end(LogRecord *prec) {
+    // Set message axis successor
     if (this->entry == nullptr) {   // first ever
       this->entry = prec;
       this->end = prec;
       return *this;
     }   // not first
-    this->end->time_suc = prec;
+    this->end->msg_suc = prec;
     this->end = prec;
+    this->count += 1;
     return *this;
   }
 
@@ -130,6 +133,7 @@ public:
   }
 
   inline _HashCell_string &join_rec_to_end(LogRecord *prec) {
+    // Set sender axis successor
     if (this->entry == nullptr) {   // first record ever
       this->entry = prec;
       this->end = prec;
