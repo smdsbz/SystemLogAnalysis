@@ -33,7 +33,7 @@
 
 # Vim Runtime Back-ups
 *.swp
-*.vim
+Session.vim
 
 # PowerPoint Files
 *.pptx

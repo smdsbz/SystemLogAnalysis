@@ -97,6 +97,8 @@ public:
 
   inline bool occupied() { return this->data.notempty(); }
 
+  inline string get_message() { return this->data.get_message(); }
+
 };
 
 

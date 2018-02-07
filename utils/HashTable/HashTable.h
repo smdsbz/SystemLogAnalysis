@@ -158,6 +158,7 @@ public:
 
   inline void set_begin(LogRecord *beg) { this->global_begin = beg; }
   inline void set_end(LogRecord *end) { this->global_end = end; }
+
 };
 
 

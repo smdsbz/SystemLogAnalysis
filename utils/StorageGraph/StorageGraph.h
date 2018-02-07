@@ -7,6 +7,9 @@ using std::cout; using std::cin; using std::endl;
 #include <string>
 using std::string;
 
+#include <vector>
+using std::vector;
+
 #include <fstream>
 using std::fstream; using std::getline;
 
@@ -151,6 +154,30 @@ public:
           + "open file \"" + filename + "\"!");
     }
     return *this;
+  }
+
+  vector<LogMessage *> query_via_message(const string &in,
+                                         const bool fuzzy=false) {
+    auto retvec = vector<LogMessage *>();
+    if (fuzzy == true) {    // fuzzy search: only the sub-string is needed
+                            // have to search the entire table!
+      for (size_t spi = 0, space = this->messages->space;
+           spi != space; ++spi) {
+        // do job if not empty slot
+        if (this->messages->table[spi].occupied()) {
+          // iter through cell chain
+          for (auto *pcell = this->messages->table + spi;
+               pcell != nullptr;
+               pcell = pcell->next) {
+            // append to retvec if find matched patter
+            if (pcell->get_message().find(in) != string::npos) {
+              retvec.push_back(&pcell->data);
+            }
+          } // iter through cell chain
+        }   // else - empty `HashCell` slot
+      } // for-loop over `MessageTable` headers
+    }
+    return retvec;
   }
 
 };

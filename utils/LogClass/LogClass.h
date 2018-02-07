@@ -110,7 +110,7 @@ public:
 
   LogMessage();
 
-  LogMessage(const string &log_string_whole, const bool message_only=false);
+  explicit LogMessage(const string &log_string_whole, const bool message_only=false);
 
   LogMessage(const LogMessage &copy);
 

@@ -41,10 +41,10 @@ namespace Misc {
 
   void show_pause() {
     cout << "Press <Enter> to continue..."; cout.flush();
-    getchar();
+    cin.get();
     return;
   }
-
+ 
 }
 
 #endif
