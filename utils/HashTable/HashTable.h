@@ -62,7 +62,7 @@ public:
    */
   _HashCell_LogMessage &insert(const LogMessage &msgobj) {
     // get index
-    size_t idx = this->hash(msgobj.get_message() + msgobj.get_sender());
+    size_t idx = this->hash(msgobj.get_message());
     /* cout << "hash val recieved was: " << idx << " ==> " */
     /*      << msgobj.get_message().substr(0, 40) << '\n'; */
     if (idx >= this->space) {
@@ -137,11 +137,16 @@ public:
 
   _HashCell_LogMessage &operator[](const string &msg) {
     auto pcell = this->table + hash(msg);
+    if (pcell->occupied() == false) {
+      cout << "empty hash!" << endl;
+      throw std::overflow_error(string("MessageTable::operator[string] ")
+          + "No match found for: " + msg);
+    }
     while ( pcell && (pcell->value_equal(msg) == false) ) {
       pcell = pcell->next;
     }
     if (pcell == nullptr) {
-      throw std::overflow_error(string("MessageTable::operator[LogMessage] ")
+      throw std::overflow_error(string("MessageTable::operator[string] ")
           + "No match found for: " + msg);
     }
     // pcell != nullptr ==> match found!

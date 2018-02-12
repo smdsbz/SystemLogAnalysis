@@ -61,6 +61,7 @@ int main(int argc, char **argv) {
     cin.clear(); cin.ignore(10000, '\n');   // get rid of illegal chars
 
     switch (oper) {
+
       case 11: {
         string in_msg; string fuzzy_ind; bool use_fuzzy;
         cout << "Use fuzzy find? [Y/n] "; cout.flush();
@@ -72,27 +73,29 @@ int main(int argc, char **argv) {
           Misc::show_pause(); break;
         }
         cout << "Message content: "; cout.flush();
-        // cin >> in_msg; cin.clear(); cin.ignore(10000, '\n');
         getline(cin, in_msg);
         auto search_result = storage->query_via_message(in_msg, use_fuzzy);
         if (search_result.empty()) {
           cout << "No result!" << endl;
           Misc::show_pause(); break;
         }
-        // TODO: Add human-readable interface for this.
-        size_t cnt = 0;
-        for (auto &rec : search_result) {
-          cout << rec->get_message() << endl;
-          if (cnt++ % 30 == 29) {
-            cout << "---- MORE (press 'q' to break) ----";
-            if (cin.get() == 'q') { break; };
-            system("clear");
-          }
-        }
-        cin.clear(); cin.ignore(10000, '\n');
-        cout << cnt << " log(s) shown in total." << endl;
+        Misc::show_query_result(search_result);
         Misc::show_pause(); break;
       }
+
+      /* case 12: { */
+      /*   string in_host; */
+      /*   cout << "Host name: "; cout.flush(); */
+      /*   getline(cin, in_host); */
+      /*   auto search_result = storage->query_via_host(in_host); */
+      /*   if (search_result.empty()) { */
+      /*     cout << "No result!" << endl; */
+      /*     Misc::show_pause(); break; */
+      /*   } */
+      /*   Misc::show_query_result(search_result); */
+      /*   Misc::show_pause(); break; */
+      /* } */
+
       case 0: { break; }
       default: { break; }
     }

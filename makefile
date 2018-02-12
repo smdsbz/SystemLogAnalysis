@@ -7,6 +7,7 @@ CALL_ARGS = ./test_env/modified_syslog.txt
 
 
 main:
+	clear
 	$(CC) $(FLAGS) $(SOURCE)
 	./$(PRODUCT) $(CALL_ARGS)
 	rm $(PRODUCT)

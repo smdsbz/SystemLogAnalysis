@@ -44,6 +44,23 @@ namespace Misc {
     cin.get();
     return;
   }
+
+  template <typename DataT>
+  void show_query_result(vector<DataT> results) {
+    system("clear");
+    size_t cnt = 0;
+    for (auto &rec : results) {
+      cout << rec->get_message() << endl;
+      if (cnt++ % 30 == 29) {
+        cout << "---- MORE (Enter q-<Enter> to break) ----";
+        if (cin.get() == 'q') { break; };
+        system("clear");
+      }
+    }
+    cout << "---- END ----";
+    cin.clear(); cin.ignore(10000, '\n');
+    cout << cnt << " log(s) shown in total." << endl;
+  }
  
 }
 

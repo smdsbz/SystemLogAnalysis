@@ -166,7 +166,7 @@ public:
         // do job if not empty slot
         if (this->messages->table[spi].occupied()) {
           // iter through cell chain
-          for (auto *pcell = this->messages->table + spi;
+          for (auto pcell = this->messages->table + spi;
                pcell != nullptr;
                pcell = pcell->next) {
             // append to retvec if find matched patter
@@ -176,9 +176,21 @@ public:
           } // iter through cell chain
         }   // else - empty `HashCell` slot
       } // for-loop over `MessageTable` headers
+    } else {    // no fuzzy
+      try {
+        auto pcell = &((*(this->messages))[in]);
+        for (; pcell != nullptr; pcell = pcell->next) {
+          if (pcell->get_message() == in) {
+            retvec.push_back(&pcell->data);
+          }
+        }   // for on cell chain
+      } catch (const std::overflow_error &e) {
+        return retvec;
+      }
     }
     return retvec;
   }
+
 
 };
 
