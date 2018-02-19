@@ -29,7 +29,7 @@ const string RE_WHOLE = (string("((?:") + _re_month
                             //   eg "Jan  1 19:43:19"
     + "([a-zA-Z\\-]+) "     // host name (lower/upper and short-dash)
                             //   eg "zhuxiaoguangs-MacBook-Air"
-    + "([^\n]+)\\[[0-9]+\\][:]? "   // sender (lower) and threadID
+    + "([^\n]+?)\\[[0-9]+\\][:]? "  // sender (lower) and threadID
                                     //   eg "steam_osx[584]"
     + "([^\n]+)$";          // message (anything hence to the eol)
 
@@ -176,7 +176,7 @@ public:
       this->axis = passed_axis;
       return;
     }
-    iterator &operator++();
+    iterator &operator++();  // see ./LogRecord_iterator.cpp
     inline bool operator==(const iterator &other) {
       if (this->axis != other.axis) {
         throw std::runtime_error("LogRecord::iterator::operator==() Cannot "
@@ -184,6 +184,7 @@ public:
       }
       return this->pRec == other.pRec;
     }
+    inline bool operator!=(const iterator &other) { return !(*this == other); }
     inline LogRecord &operator* () {
       if (this->pRec == nullptr) {
         throw std::runtime_error("LogRecord::iterator::operator*() Cannot get "
@@ -252,7 +253,6 @@ public:
 
   /* iterator */
   inline iterator begin(axis_type axis=TIME) { return iterator(*this, axis); }
-
   inline iterator end(axis_type axis=TIME) { return iterator(nullptr, axis); }
 
 };

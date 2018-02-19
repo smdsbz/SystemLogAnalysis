@@ -18,7 +18,8 @@ using std::fstream; using std::getline;
 #include "../LogClass/LogClass.h"
 #include "../HashTable/HashTable.h"
 #include "../UIGadgets/UIGadgets.h"
-using UIGadgets::ProgressBar;
+using UIGadgets::ProgressBar; using UIGadgets::show_pause;
+using UIGadgets::get_decision;
 
 /****** StorageGraph : Class Declaration and Definitioin ******/
 
@@ -156,9 +157,9 @@ public:
     return *this;
   }
 
-  vector<LogMessage *> query_via_message(const string &in,
-                                         const bool fuzzy=false) {
-    auto retvec = vector<LogMessage *>();
+  vector<_HashCell_LogMessage *> query_on_message(const string &in,
+        const bool fuzzy=false) {
+    auto retvec = vector<_HashCell_LogMessage *>();
     if (fuzzy == true) {    // fuzzy search: only the sub-string is needed
                             // have to search the entire table!
       for (size_t spi = 0, space = this->messages->space;
@@ -170,18 +171,18 @@ public:
                pcell != nullptr;
                pcell = pcell->next) {
             // append to retvec if find matched patter
-            if (pcell->get_message().find(in) != string::npos) {
-              retvec.push_back(&pcell->data);
+            if (pcell->_repr().find(in) != string::npos) {
+              retvec.push_back(pcell);
             }
           } // iter through cell chain
-        }   // else - empty `HashCell` slot
+        }   // else - empty `HashCell` slot, do *NOTHING*
       } // for-loop over `MessageTable` headers
     } else {    // no fuzzy
       try {
         auto pcell = &((*(this->messages))[in]);
         for (; pcell != nullptr; pcell = pcell->next) {
-          if (pcell->get_message() == in) {
-            retvec.push_back(&pcell->data);
+          if (pcell->_repr() == in) {
+            retvec.push_back(pcell);
           }
         }   // for on cell chain
       } catch (const std::overflow_error &e) {
@@ -191,6 +192,114 @@ public:
     return retvec;
   }
 
+  vector<_HashCell_string *> query_on_sender(const string &in,
+        const bool fuzzy=false) {
+    auto retvec = vector<_HashCell_string *>();
+    if (fuzzy == true) {    // fuzzy search: only the sub-string is needed
+                            // have to search the entire table!
+      for (size_t spi = 0, space = this->senders->space;
+           spi != space; ++spi) {
+        // do job if not empty slot
+        if (this->senders->table[spi].occupied()) {
+          // iter through cell chain
+          for (auto pcell = this->senders->table + spi;
+               pcell != nullptr;
+               pcell = pcell->next) {
+            // append to retvec if find matched patter
+            if (pcell->_repr().find(in) != string::npos) {
+              retvec.push_back(pcell);
+            }
+          } // iter through cell chain
+        }   // else - empty `HashCell` slot, do *NOTHING*
+      } // for-loop over `MessageTable` headers
+    } else {    // no fuzzy
+      try {
+        auto pcell = &((*(this->senders))[in]);
+        for (; pcell != nullptr; pcell = pcell->next) {
+          if (pcell->_repr() == in) {
+            retvec.push_back(pcell);
+          }
+        }   // for on cell chain
+      } catch (const std::overflow_error &e) {
+        return retvec;
+      }
+    }
+    return retvec;
+  }
+
+  LogRecord *get_focus(const string &in,
+                       const string &axis,
+                       const bool fuzzy=false) {
+    LogRecord *prec = nullptr;
+    if (axis == "message") {
+      auto candidate = query_on_message(in, fuzzy);
+      if (candidate.empty()) { return nullptr; }
+      for (auto &each : candidate) {
+        system("clear");
+        cout << each->_repr() << endl;
+        bool is_correct;
+        try {
+          is_correct = get_decision("Is this the message you're "
+              "looking for?");
+        } catch (const std::runtime_error &e) {
+          cout << "Unrecognized instruction!" << endl;
+          return nullptr;
+        }
+        if (is_correct) { prec = each->entry; break; }
+      } // end for
+    } else if (axis == "sender") {
+      auto candidate = query_on_sender(in, fuzzy);
+      if (candidate.empty()) { return nullptr; }
+      for (auto &each : candidate) {
+        system("clear");
+        cout << each->_repr() << endl;
+        bool is_correct;
+        try {
+          is_correct = get_decision("Is this the message you're "
+              "looking for?");
+        } catch (const std::runtime_error &e) {
+          cout << "Unrecognized instruction!" << endl;
+          return nullptr;
+        }
+        if (is_correct) { prec = each->entry; break; }
+      } // end for
+    } else { throw std::invalid_argument("Misc::get_focus() Invalid axis!"); }
+    // move along time
+    while (prec) {
+      system("clear");
+      cout << "======== Current Record ========" << endl;
+      cout << "Date: " << prec->get_date() << endl;
+      cout << "Sender: " << prec->get_sender() << endl;
+      cout << "Message: " << prec->get_message() << endl;
+      /* bool is_correct; */
+      /* try { */
+      /*   is_correct = get_decision("Is this the record you're looking " */
+      /*       "for?"); */
+      /* } catch (const std::runtime_error &e) { */
+      /*   cout << "Unrecognized instruction!" << endl; */
+      /*   return nullptr; */
+      /* } */
+      /* if (is_correct) { return prec; } */
+      /* // else - go next */
+      cout << "======== Options ========" << endl;
+      cout << "    y - this is the record I'm looking for\n"
+           << "    n - next along time\n"
+           << "    m - next occurence of this massage\n"
+           << "    p - take a peak at all messages in the next 1 second"
+           << endl;
+      cout << "Your choice: "; cout.flush();
+      switch(cin.get()) {
+        case 'y': case 'Y': { return prec; }
+        case 'n': { prec = prec->time_suc; break; }
+        case '\n': { prec = prec->msg_suc; break; }
+        case 'm': { prec = prec->msg_suc; break; }
+        case 'p': { cout << "implementing"; break; }
+        default: { break; }
+      }
+    }   // end while
+    cin.clear(); cin.ignore(10000, '\n');
+    return nullptr;
+  } // get_focus
 
 };
 

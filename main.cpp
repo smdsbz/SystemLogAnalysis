@@ -13,6 +13,8 @@ using std::vector;
 #include "./utils/HashTable/HashTable.h"
 #include "./utils/StorageGraph/StorageGraph.h"
 #include "./Misc.h"
+#include "./utils/UIGadgets/UIGadgets.h"
+using UIGadgets::show_pause; using UIGadgets::get_decision;
 
 
 
@@ -33,7 +35,7 @@ int main(int argc, char **argv) {
   if (storage == nullptr) { return -1; }
   // NOTE: `storage` is promised mounted!
   cout << "Successfully loaded!" << endl;
-  Misc::show_pause();
+  show_pause();
 
 
   int oper = -1;
@@ -42,9 +44,10 @@ int main(int argc, char **argv) {
     cout << endl;
     cout << "    SystemLogAnalysis (OS-X build) (by smdsbz)    \n"
          << "==================================================\n"
-         << " 11. Query via message content\n"
-         << " 12. Query via host\n"
-         << " 13. Query via sender\n"
+         << " 11. Query on message contents\n"
+         /* << " 12. Query on host\n" */
+         << " 12. Query on sender\n"
+         << " 13. General query\n"
          << "\n"
          << " 21. Insert new log manually\n"
          << "\n"
@@ -64,43 +67,57 @@ int main(int argc, char **argv) {
 
       case 11: {
         string in_msg; string fuzzy_ind; bool use_fuzzy;
-        cout << "Use fuzzy find? [Y/n] "; cout.flush();
-        cin >> fuzzy_ind; cin.clear(); cin.ignore(10000, '\n');
-        if (fuzzy_ind == "Y" || fuzzy_ind == "y") { use_fuzzy = true; }
-        else if (fuzzy_ind == "N" || fuzzy_ind == "n") { use_fuzzy = false; }
-        else {  // unrecognized symbol - jmp out
+        try {
+          use_fuzzy = get_decision("Use fuzzy find?");
+        } catch (const std::runtime_error &e) { // unrecognized symbol
           cout << "Unrecognized symbol!" << endl;
-          Misc::show_pause(); break;
+          show_pause(); break;
         }
         cout << "Message content: "; cout.flush();
         getline(cin, in_msg);
-        auto search_result = storage->query_via_message(in_msg, use_fuzzy);
-        if (search_result.empty()) {
-          cout << "No result!" << endl;
-          Misc::show_pause(); break;
-        }
+        auto search_result = storage->query_on_message(in_msg, use_fuzzy);
         Misc::show_query_result(search_result);
-        Misc::show_pause(); break;
+        show_pause(); break;
       }
 
-      /* case 12: { */
-      /*   string in_host; */
-      /*   cout << "Host name: "; cout.flush(); */
-      /*   getline(cin, in_host); */
-      /*   auto search_result = storage->query_via_host(in_host); */
-      /*   if (search_result.empty()) { */
-      /*     cout << "No result!" << endl; */
-      /*     Misc::show_pause(); break; */
-      /*   } */
-      /*   Misc::show_query_result(search_result); */
-      /*   Misc::show_pause(); break; */
-      /* } */
+      case 12: {
+        string in_sender;
+        cout << "Sender name: "; cout.flush();
+        getline(cin, in_sender);
+        auto search_result = storage->query_on_sender(in_sender);
+        Misc::show_query_result(search_result);
+        show_pause(); break;
+      }
+
+      case 13: {
+        string axis;
+        for (; axis != "message" && axis != "sender";) {
+          cout << "Query range (message/sender): "; cout.flush();
+          getline(cin, axis);
+        }
+        string in;
+        cout << "Content: "; cout.flush();
+        getline(cin, in);
+        bool fuzzy = get_decision("Use fuzzy find?");
+        // finished with input
+        LogRecord *cursor = storage->get_focus(in, axis, fuzzy);
+        if (cursor == nullptr) {
+          cout << "Nothing is selected!" << endl;
+        } else {
+          cout << cursor->get_date() << endl;
+          cout << cursor->get_sender() << endl;
+          cout << cursor->get_message() << endl;
+        }
+        show_pause(); break;
+      }
 
       case 0: { break; }
       default: { break; }
-    }
 
-  }
+    }
+	/* endofswitch: { ; } */
+
+  }	// reploop
 
   system("clear");
   cout << "Exiting..." << endl;

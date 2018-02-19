@@ -98,6 +98,7 @@ public:
   inline bool occupied() { return this->data.notempty(); }
 
   inline string get_message() { return this->data.get_message(); }
+  inline string _repr() { return this->data.get_message(); }
 
 };
 
@@ -181,6 +182,9 @@ public:
   }
 
   inline bool occupied() { return !this->data.empty(); }
+
+  inline string _repr() { return this->data; }
+
 };
 
 

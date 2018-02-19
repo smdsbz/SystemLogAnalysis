@@ -33,7 +33,7 @@ namespace UIGadgets {
     unsigned char  progress  = 0;
 
   public:
-    
+
     inline ProgressBar(unsigned short wid=80,
                        unsigned char  start=0) {
       if (wid < 10U) {
@@ -100,45 +100,24 @@ namespace UIGadgets {
   };
 
 
-  /* class TopFrame { */
-  /* public: */
-  /*   Storage */ 
-  /* public: */
 
-  /*   TopFrame &enter() { */
-  /*     int op = 0; */
-  /*     while (true) { */
-  /*       system("clear"); */
-  /*       cout << "        SystemLogAnalysis (OS-X build) - Nothing Loaded\n" */
-  /*            << "  ======================================================\n" */
-  /*            << "   1. Read from standard bsd-style syslog dump\n" */
-  /*            << "\n" */
-  /*            << "   0. Exit program\n" */
-  /*            << "  ======================================================\n"; */
-  /*       cout.flush(); */
-  /*       cin >> op; */
-  /*       switch (op) { */
-  /*         case 1: { */
-  /*           // TODO: Read file frame */
-  /*           cout << "  Path to file: "; */
-  /*           string filename; */
-  /*           cin >> filename; */
-  /*           try { */
-              
-  /*           } catch (const std::runtime_error &e) { */
-  /*             cout << "" */
-  /*           } */
-  /*           break; */
-  /*         } */
-  /*         case 0: { return *this; } */
-  /*       }   // end of switch */
-  /*     } // input loop */
-  /*   } */
+  void show_pause() {
+    cout << "Press <Enter> to continue..."; cout.flush();
+    cin.get();
+    return;
+  }
 
-  /* } // class TopFrame */
-
-
-
+  bool get_decision(const string &prompt="") {
+    cout << prompt << " [Y/n] "; cout.flush();
+    string raw;
+    while (true) {
+      cin >> raw; cin.clear(); cin.ignore(10000, '\n');
+      if (raw == "Y" || raw == "y") { return true; }
+      if (raw == "N" || raw == "n") { return false; }
+      cout << "Choose again! [Y/n] "; cout.flush();
+    }
+    throw std::runtime_error("UIGadgets::get_decision() Unrecognized input!");
+  }
 
 }   // ns UIGadgets
 #endif
