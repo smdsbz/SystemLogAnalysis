@@ -12,6 +12,7 @@ using std::vector;
 #include "./utils/LogClass/LogClass.h"
 #include "./utils/HashTable/HashTable.h"
 #include "./utils/StorageGraph/StorageGraph.h"
+#include "./utils/FPTree/FPTree.h"
 #include "./Misc.h"
 #include "./utils/UIGadgets/UIGadgets.h"
 using UIGadgets::show_pause; using UIGadgets::get_decision;
@@ -40,6 +41,7 @@ int main(int argc, char **argv) {
 
   int oper = -1;
   while (oper != 0) {
+    // show interface messages
     system("clear");
     cout << endl;
     cout << "    SystemLogAnalysis (OS-X build) (by smdsbz)    \n"
@@ -111,13 +113,27 @@ int main(int argc, char **argv) {
         show_pause(); break;
       }
 
+      case 4: {
+        system("clear");
+        cout << "Test Run - FPTree::_first_run()" << endl;
+        auto analysis = FPTree();
+        analysis._first_run(*storage);
+        for (auto &each : analysis.headers) {
+          cout << each->get_message() << endl;
+          cout << "Occured " << each.freq << " time(s)" << endl;
+          show_pause();
+          system("clear");
+        }
+        cout << "headers total ==> " << analysis.headers.size() << endl;
+        show_pause(); break;
+      }
+
       case 0: { break; }
       default: { break; }
 
     }
-	/* endofswitch: { ; } */
 
-  }	// reploop
+  } // reploop
 
   system("clear");
   cout << "Exiting..." << endl;

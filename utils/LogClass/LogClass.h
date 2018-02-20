@@ -314,7 +314,7 @@ public:
     // `ret` is deviation from 0 (expected)
     // HACK: use enhanced sigmoid to map deviation range to index range
     double shived = (
-      static_cast<double>(this->pool_size - 1) 
+      static_cast<double>(this->pool_size - 1)
       / ( 1.0 + exp(-2.8 * 1E-8 * static_cast<double>(this->pool_size) * ret) )
     );
     return static_cast<uint64_t>(shived);
