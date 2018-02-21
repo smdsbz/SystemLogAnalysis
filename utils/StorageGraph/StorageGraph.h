@@ -121,12 +121,12 @@ public:
       size_t cur_char_cnt = 0;
       size_t log_cnt = 0;
       auto pbar = ProgressBar(80);
-      pbar.draw_on_current_line(true, 0);
+      pbar.draw_on_current_line(0);
       while (getline(file, line)) {
         cur_char_cnt += line.length();
-        if (log_cnt % 300 == 0) {   // NOTE: Display too often may cause
+        if (log_cnt % 500 == 0) {   // NOTE: Display too often may cause
                                     //       performance issue!
-          pbar.draw_on_current_line(true, cur_char_cnt * 100 / char_cnt + 1);
+          pbar.draw_on_current_line(cur_char_cnt * 100 / char_cnt);
         }
         try {
           msgbuf = LogMessage(line);

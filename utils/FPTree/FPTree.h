@@ -64,7 +64,7 @@ public:
   public:
     _HashCell_LogMessage *entity = nullptr;
     size_t  freq   = 0;
-    _Node  *occur  = nullptr;
+    /* _Node  *occur  = nullptr; */
 
   public:
 
@@ -80,7 +80,6 @@ public:
     _Header &operator= (const _Header &other) {
       this->entity = other.entity;
       this->freq   = other.freq;
-      this->occur  = other.occur;
       return *this;
     }
 
@@ -98,12 +97,19 @@ public:
   };    // _Header
 
 
+  Storage         *storage = nullptr;
   vector<_Header>  headers;
   _Node           *nodes = nullptr;
 
 public:
 
-  FPTree() { /* pass */ ; }
+  explicit FPTree(Storage *s) {
+    if (s == nullptr) {
+      throw std::invalid_argument("FPTree::FPTree() Accompanied Storage "
+          "cannot be null!");
+    }
+    this->storage = s;
+  }
 
   _Header &operator[](_HashCell_LogMessage *p) {
     // check if `p` is in `headers`
@@ -135,7 +141,12 @@ public:
     throw std::runtime_error("FPTree::_add_header() Cannot find insert position");
   }
 
-  FPTree &_first_run(Storage &s, size_t valve_freq=3) {
+  FPTree &_first_run(size_t valve_freq=3) {
+    if (this->storage == nullptr) {
+      throw std::runtime_error("FPTree::_first_run() Attempting to run "
+          "analysis on empty storage!");
+    }
+    auto &s = *(this->storage);
     for (size_t idx = 0, range = s.messages->space;
          idx != range; ++idx) {
       if (s.messages->table[idx].occupied()) {
@@ -151,8 +162,9 @@ public:
   } // _first_run
 
   FPTree &_add_pattern(vector<_Header> pat) {
-    // first pattern
-    if (this->nodes == nullptr) {
+    // HACK: Performance trade-off, more code for less conparison
+    if (pat.empty()) { return *this; }  // sent empty pattern
+    if (this->nodes == nullptr) {   // first pattern
       // simply convert vector to link-list
       try {
         this->nodes = new _Node(pat[0].entity);   // add first
@@ -160,7 +172,7 @@ public:
         cout << "Space allocation failed!" << endl;
         throw e;
       }
-      auto prev_node = *this->nodes;
+      auto prev_node = *(this->nodes);
       ++prev_node;  // inc `occur`
       for (size_t idx = 1, range = pat.size();
            idx != range;
@@ -173,23 +185,135 @@ public:
         }
         ++prev_node;    // inc `occur`
       }
+      return *this;
     } else {    // not first pattern
-      _Node *current_layer = this->nodes;
+      _Node *current_layer = this->nodes;   // (first node in) first layer
+                                            // promised not `nullptr`
       _Node *cursor_node = nullptr;
       for (auto &each : pat) {
-        cursor_node = current_layer->in_brothers(each.entity);
-        if (cursor_node == nullptr) {   // node not in fp-tree yet
-          // TODO
+        if (current_layer == nullptr) { // current_layer does not exist,
+                                        // i.e. new pattern
+          // directly append rest in `pat` to `cursor_node->child`
+          try {
+            cursor_node->child = new _Node(each.entity);
+          } catch (const std::bad_alloc &e) {
+            cout << "Space allocation failed!" << endl;
+            throw e;
+          }
+          cursor_node = cursor_node->child;
+          ++(*cursor_node); // inc `occur`
+          /* current_layer = cursor_node->child;   // next layer, still `nullptr` */
+          continue; // do *ONE* at a time
         }
-      }
+        // find ref in current layer
+        cursor_node = current_layer->in_brothers(each.entity);
+        if (cursor_node == nullptr) {   // node not in current layer yet
+          // append one to last in layer
+          cursor_node = current_layer->last_brother();
+          try {
+            cursor_node->brother = new _Node(each.entity);
+          } catch (const std::bad_alloc &e) {
+            cout << "Space allocation failed!" << endl;
+            throw e;
+          }
+          cursor_node = cursor_node->brother;
+        } else {    // already in current layer
+          /* pass */ ;
+        }
+        ++(*cursor_node);   // inc `occur`
+        // go to next layer
+        current_layer = cursor_node->child; // NOTE: Could be `nullptr`!
+                                            //       Handled at the begining.
+      } // for each in pat, i.e. each layer
     }
+    return *this;
   } // _add_pattern
 
-  /* FPTree &_second_run() { */
-  /*   for (auto &header : this->headers) { */
-  /*     // TODO */
-  /*   } */
-  /* } */
+  vector<_Header> _sieve_frequent(vector<LogRecord *> context) {
+    // HACK: Kinda like bucket-sort
+    vector<_Header> ret;
+    for (auto &each_header : this->headers) {   // for each message,
+                                                // with freq descend
+      for (auto &each_prec : context) {     // for each record in context
+        // append message if it occurs in context
+        if (each_header.entity->strict_equal(*each_prec->message)) {
+          ret.push_back(each_header);
+          break;
+        }
+      } // for each record in context
+    }   // for each message, with freq descend
+    return ret;
+  }
+
+  FPTree &_second_run(size_t valve_delay=5) {
+    for (auto &header : this->headers) {    // for each frequent message
+      // init ProgressBar - show current message process
+      auto pbar = ProgressBar(80);
+      pbar.draw_on_current_line(0);
+      size_t pbar_total = header.entity->count;
+      cout << ", total " << pbar_total; cout.flush();
+      size_t pbar_curr = 0;
+      for (auto prec = header.entity->entry;
+           prec != nullptr;
+           prec = prec->msg_suc) {  // for each occurance of message
+        if (++pbar_curr % 5 == 0) {
+          pbar.draw_on_current_line(pbar_curr * 100 / pbar_total);
+        }
+        this->_add_pattern(
+            _sieve_frequent(prec->peek(valve_delay)) );
+      } // for each occurance of message
+      pbar.draw_done();
+    }   // for each frequent message
+    return *this;
+  } // _second_run
+
+  FPTree &run(size_t hp_min_freq=3, size_t hp_max_delay=5) {
+    this->_first_run(hp_min_freq);
+    this->_second_run(hp_max_delay);
+    return *this;
+  }
+
+  FPTree &show_result(size_t valve_freq=5) {
+    vector<_Node *> node_stack;
+    auto pnode = this->nodes;
+    // first pattern
+    while (pnode && pnode->occur >= valve_freq) {
+      node_stack.push_back(pnode);
+      pnode = pnode->child;
+    }
+    // show pattern
+    for (auto &each : node_stack) {
+      cout << each->entity->get_message() << endl;
+    }
+    cout << node_stack.size() << " messages in pattern" << endl;
+    cout << "---- occured " << node_stack.back()->occur << " times ----\n" << endl;
+    // more patterns
+    while (!node_stack.empty()) {
+      auto next_node = node_stack.back()->brother;  // change route
+      node_stack.pop_back();
+      if (next_node && next_node->occur >= valve_freq) {    // if different route exists
+        while (next_node && next_node->occur >= valve_freq) {   // venture deep
+          node_stack.push_back(next_node);
+          next_node = next_node->child;
+        }
+        // reached another pattern with max depth
+        // show pattern
+        for (auto &each : node_stack) {
+          cout << each->entity->get_message() << endl;
+        }
+        cout << node_stack.size() << " messages in pattern" << endl;
+        cout << "---- occured " << node_stack.back()->occur << " times ----\n" << endl;
+      } else {  // different route does not exist
+                // but current stack agrees requirements
+        /* // show pattern only if `occur` differs */
+        /* for (auto &each : node_stack) { */
+        /*   cout << each->entity->get_message() << endl; */
+        /* } */
+        /* cout << "---- occured " << node_stack.back()->occur << " times ----\n" << endl; */
+      }
+    }   // stack now empty
+    return *this;
+  }
 
 };
 

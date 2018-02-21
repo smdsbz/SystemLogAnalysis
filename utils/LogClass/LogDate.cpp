@@ -128,8 +128,8 @@ LogDate::operator+(const size_t sec) {
         }
       }
       case 2: { // HACK: Unfortunately, log does *NOT* record year.
-                //       Treating Feb has 28 days
-        if (time.dat == 29) {   // TODO: Auto year recognition
+                //       Treating Feb has 29 days
+        if (time.dat == 30) {   // TODO: Auto year recognition
           time.mon = time.mon + 1;
         }
       }

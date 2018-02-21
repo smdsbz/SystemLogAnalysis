@@ -61,28 +61,10 @@ namespace UIGadgets {
       return *this;
     }
 
-    inline ProgressBar &draw_on_next_line(bool reset=true,
-                             unsigned char rst_to=0) {
-      if (reset) {
-        if (rst_to > 100) {
-          throw std::invalid_argument("UIGadgets::ProgressBar::"
-              "draw_on_next_line() Over 100%!");
-        }
-        this->progress = rst_to;
-      }
-      cout << endl;
-      _refresh_current_line();
-      return *this;
-    }
-
-    inline ProgressBar &draw_on_current_line(bool reset=true,
-                                unsigned char rst_to=0) {
-      if (reset) {
-        if (rst_to > 100) {
-          throw std::invalid_argument("UIGadgets::ProgressBar::"
-              "draw_in_next_line() Over 100%!");
-        }
-        this->progress = rst_to;
+    inline ProgressBar &draw_on_current_line(unsigned char rst_to=0) {
+      this->progress = rst_to;
+      if (rst_to > 100) {
+        this->progress = 100;
       }
       _refresh_current_line();
       return *this;

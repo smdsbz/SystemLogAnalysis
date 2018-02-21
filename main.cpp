@@ -116,15 +116,10 @@ int main(int argc, char **argv) {
       case 4: {
         system("clear");
         cout << "Test Run - FPTree::_first_run()" << endl;
-        auto analysis = FPTree();
-        analysis._first_run(*storage);
-        for (auto &each : analysis.headers) {
-          cout << each->get_message() << endl;
-          cout << "Occured " << each.freq << " time(s)" << endl;
-          show_pause();
-          system("clear");
-        }
-        cout << "headers total ==> " << analysis.headers.size() << endl;
+        auto analysis = FPTree(storage);
+        analysis.run(10, 1);
+        system("clear");
+        analysis.show_result(10);
         show_pause(); break;
       }
 

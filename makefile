@@ -12,6 +12,9 @@ main:
 	./$(PRODUCT) $(CALL_ARGS)
 	rm $(PRODUCT)
 
+build:
+	$(CC) $(FLAGS) $(SOURCE)
+
 debug:
 	$(CC) $(FLAGS) -g $(SOURCE)
 	lldb ./$(PRODUCT)

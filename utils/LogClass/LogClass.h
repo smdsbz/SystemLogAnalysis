@@ -8,6 +8,9 @@ using std::cout; using std::cin; using std::endl;
 #include <string>
 using std::string; using std::to_string;
 
+#include <vector>
+using std::vector;
+
 #include <stdexcept>
 
 
@@ -254,6 +257,19 @@ public:
   /* iterator */
   inline iterator begin(axis_type axis=TIME) { return iterator(*this, axis); }
   inline iterator end(axis_type axis=TIME) { return iterator(nullptr, axis); }
+
+  vector<LogRecord *> peek(size_t sec=5) {
+    vector<LogRecord *> ret;
+    ret.push_back(this);    // add self to pattern
+    auto border = this->date + sec;
+    for (LogRecord *each = this->time_suc; each; each = each->time_suc) {
+      // NOTE: No self-repeat!
+      if (each->message == this->message) { return ret; }
+      if (each->date > border) { break; }
+      ret.push_back(each);
+    }
+    return ret;
+  }
 
 };
 
