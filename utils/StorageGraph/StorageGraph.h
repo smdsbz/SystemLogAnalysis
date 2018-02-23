@@ -296,23 +296,14 @@ public:
         if (is_correct) { prec = each->entry; break; }
       } // end for
     } else { throw std::invalid_argument("Misc::get_focus() Invalid axis!"); }
+    // `prec` set at approx.
     // move along time
     while (prec) {
       system("clear");
       cout << "======== Current Record ========" << endl;
       cout << "Date: " << prec->get_date() << endl;
       cout << "Sender: " << prec->get_sender() << endl;
-      cout << "Message: " << prec->get_message() << endl;
-      /* bool is_correct; */
-      /* try { */
-      /*   is_correct = get_decision("Is this the record you're looking " */
-      /*       "for?"); */
-      /* } catch (const std::runtime_error &e) { */
-      /*   cout << "Unrecognized instruction!" << endl; */
-      /*   return nullptr; */
-      /* } */
-      /* if (is_correct) { return prec; } */
-      /* // else - go next */
+      cout << "Message: \n" << prec->get_message() << endl;
       cout << "======== Options ========" << endl;
       cout << "    y - this is the record I'm looking for\n"
            << "    n - next along time\n"
@@ -325,7 +316,16 @@ public:
         case 'n': { prec = prec->time_suc; break; }
         case '\n': { prec = prec->msg_suc; break; }
         case 'm': { prec = prec->msg_suc; break; }
-        case 'p': { cout << "implementing"; break; }
+        case 'p': {
+          cin.clear(); cin.ignore(10000, '\n');
+          vector<LogRecord *> recs = prec->peek(1);
+          for (auto &each : recs) {
+            cout << each->_repr() << endl;
+            cout << "---- MORE ----"; getchar();
+          }
+          cout << "---- END ----"; getchar();
+          break;
+        }
         default: { break; }
       }
     }   // end while

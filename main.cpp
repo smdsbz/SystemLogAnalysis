@@ -33,6 +33,7 @@ int main(int argc, char **argv) {
     // dump log to file
     system(string("touch" + filename).c_str());
     system(string("syslog -F bsd > " + filename).c_str());
+    cout << "Logs successfully dumped from console to " << filename << endl;
     storage = Misc::load_from_file(filename);
   }
 

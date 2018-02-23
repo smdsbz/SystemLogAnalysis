@@ -104,7 +104,7 @@ LogDate::LogDate(const string &str) {
 
 LogDate &
 LogDate::operator+(const size_t sec) {
-  for (size_t remain = sec + 1; remain != 0; --remain) {
+  for (size_t remain = sec; remain != 0; --remain) {
     time.sec = (time.sec + 1) % 60;
     // forward detect
     if (time.sec != 0) { continue; }

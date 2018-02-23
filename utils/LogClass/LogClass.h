@@ -70,10 +70,10 @@ public:
   }
 
   inline bool operator> (const LogDate &other) {
-    if (this->time.mon <= other.time.mon) { return false; }
-    if (this->time.dat <= other.time.dat) { return false; }
-    if (this->time.hor <= other.time.hor) { return false; }
-    if (this->time.min <= other.time.min) { return false; }
+    if (this->time.mon <  other.time.mon) { return false; }
+    if (this->time.dat <  other.time.dat) { return false; }
+    if (this->time.hor <  other.time.hor) { return false; }
+    if (this->time.min <  other.time.min) { return false; }
     if (this->time.sec <= other.time.sec) { return false; }
     return true;
   }
@@ -83,10 +83,10 @@ public:
   }
 
   inline bool operator< (const LogDate &other) {
-    if (this->time.mon >= other.time.mon) { return false; }
-    if (this->time.dat >= other.time.dat) { return false; }
-    if (this->time.hor >= other.time.hor) { return false; }
-    if (this->time.min >= other.time.min) { return false; }
+    if (this->time.mon >  other.time.mon) { return false; }
+    if (this->time.dat >  other.time.dat) { return false; }
+    if (this->time.hor >  other.time.hor) { return false; }
+    if (this->time.min >  other.time.min) { return false; }
     if (this->time.sec >= other.time.sec) { return false; }
     return true;
   }
@@ -262,6 +262,13 @@ public:
   inline string get_message() const { return this->message->get_message(); }
   inline string get_date()    const { return this->date.str(); }
   inline string get_sender()  const { return this->message->get_sender(); }
+  inline string _repr() const {
+    /* return this->get_message(); */
+    string datestr  = "Date :"      + this->get_date();
+    string snderstr = "Sender: "    + this->get_sender();
+    string msgstr   = "Message: \n" + this->get_message();
+    return datestr + '\n' + snderstr + '\n' + msgstr;
+  }
 
   /* iterator */
   inline iterator begin(axis_type axis=TIME) { return iterator(*this, axis); }

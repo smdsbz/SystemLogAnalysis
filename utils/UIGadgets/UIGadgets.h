@@ -82,7 +82,6 @@ namespace UIGadgets {
   };
 
 
-
   void show_pause() {
     cout << "Press <Enter> to continue..."; cout.flush();
     cin.get();
