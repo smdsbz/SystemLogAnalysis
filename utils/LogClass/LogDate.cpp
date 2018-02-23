@@ -145,8 +145,8 @@ LogDate::str() const {
     string ret;
     ret.append(_month_ushort_to_str(time.mon) + " ");
     ret.append(_ushort_to_dualdigit(time.dat, " ") + " ");
-    ret.append(_ushort_to_dualdigit(time.hor) + " ");
-    ret.append(_ushort_to_dualdigit(time.min) + " ");
+    ret.append(_ushort_to_dualdigit(time.hor) + ":");
+    ret.append(_ushort_to_dualdigit(time.min) + ":");
     ret.append(_ushort_to_dualdigit(time.sec));
     return ret;
   } catch (const std::runtime_error &e) {

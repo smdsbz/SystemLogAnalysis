@@ -5,13 +5,17 @@
 using std::cout; using std::cin; using std::endl;
 
 #include <string>
-using std::string;
+using std::string; using std::stoul;
 
 #include <vector>
 using std::vector;
 
 #include <fstream>
 using std::fstream; using std::getline;
+
+#include <regex>
+using std::regex; using std::regex_match;
+using std::smatch; using std::ssub_match;
 
 #include <stdexcept>
 
@@ -74,23 +78,42 @@ public:
       //       you (returned as reference to cell)!
       //       Just pretend that every `insert()` or `link()` is the first
       //       call to that operand.
-      auto &msg_cell = this->messages->insert(msg);  // may fail,
+      auto &msg_cell = this->messages->insert(msg);
       // associate `LogRecord` and `LogMessage`
-      //   or `link()` would fail!
       prec->set_message(msg_cell.data);
-      auto &sndr_cell = this->senders->link(*prec);  // but finds cell for you!
+      auto &sndr_cell = this->senders->link(*prec);
       // add `LogRecord` to `Storage`
       // NOTE: The following tow lines requires that `log` passed hasn't
       //       appeared before.
       this->messages->join_rec_to_end(prec);    // set `time_suc`
-      msg_cell.join_rec_to_end(prec);           // set `msg_suc`
+      msg_cell.join_rec_to_end(prec);           // set `msg_suc`, and inc `count`
       sndr_cell.join_rec_to_end(prec);          // set `sender_suc`
     } catch (const std::bad_alloc &e) { throw e; }
-    /* // set global pos indicators */
-    /* if (this->messages->global_begin == nullptr) { */
-    /*   this->messages->global_begin = prec; */
-    /* } */
-    /* this->messages->global_end = prec; */
+    return *prec;
+  }
+
+  size_t is_repeat(const string &line) {
+    try {
+      auto re = regex("^--- last message repeated ([0-9]+) time[s]? ---$");
+      smatch matches;
+      regex_match(line, matches, re);
+      if (matches.size() != 2) {
+        return 0;
+      } else { return stoul(matches[1].str()); }
+    } catch (const std::exception &e) { return 0; }
+  }
+
+  LogRecord &_repeat_last_rec() {
+    LogRecord *prec = nullptr;
+    try {
+      prec = new LogRecord(*this->messages->global_end);
+    } catch (const std::bad_alloc &e) { throw e; }
+    auto &msg = *prec->message;
+    auto &msg_cell = this->messages->insert(msg);   // won't insert, only find
+    auto &sndr_cell = this->senders->link(*prec);
+    this->messages->join_rec_to_end(prec);
+    msg_cell.join_rec_to_end(prec);
+    sndr_cell.join_rec_to_end(prec);
     return *prec;
   }
 
@@ -131,15 +154,24 @@ public:
         try {
           msgbuf = LogMessage(line);
         } catch (const std::runtime_error &e) {
-          // cannot match regex:
+          // cannot match regex for LogMessage:
           //   1. false file
           //   2. last log spanned
+          //   3. --- last message repeated ... ----
           if (prec == nullptr) {    // case 1: false file
             throw std::runtime_error("Storage::read_from_file() Input file is "
                 "not standard log text file!");
-          } else {  // case 2: last log spanned
+          } else {
+            // case 3: --- last message repeated ... ---
+            size_t repeat_times = is_repeat(line);
+            if (repeat_times != 0) {
+              for (size_t t = 0; t != repeat_times; ++t) {
+                prec = &(this->_repeat_last_rec());
+              }
+              continue;
+            }
+            // case 2: last log spanned
             prec->message->append_msg(line);
-            /* cout << "appended \"" << line << "\"" << endl; */
             continue;
           }
         }

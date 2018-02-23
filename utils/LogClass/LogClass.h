@@ -208,7 +208,16 @@ public:
 
   inline LogRecord() { return; }
 
-  LogRecord(const string &re_mathed_date_string, const bool whole=false);
+  explicit LogRecord(const string &re_mathed_date_string, const bool whole=false);
+
+  explicit LogRecord(const LogRecord &other) {
+    this->message = other.message;
+    this->date    = other.date;
+    this->time_suc   = nullptr;
+    this->msg_suc    = nullptr;
+    this->sender_suc = nullptr;
+    return;
+  }
 
   ~LogRecord();
 

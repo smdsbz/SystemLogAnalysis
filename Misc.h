@@ -7,9 +7,6 @@ using std::cout; using std::cin; using std::endl;
 #include <string>
 using std::string;
 
-/* #include <filesystem> */
-/* using std::filesystem; */
-
 #include <stdexcept>
 
 #include "./utils/LogClass/LogClass.h"
@@ -21,7 +18,6 @@ namespace Misc {
 
   Storage *load_from_file(const string &filename) {
     Storage *storage = nullptr;
-    /* if (filesystem::exists(filename) { */
     if (true) {
       try {
         cout << "Loading from file " << filename << ", please wait..." << endl;
@@ -38,24 +34,6 @@ namespace Misc {
     }
     return storage;
   }
-
-  /* void show_pause() { */
-  /*   cout << "Press <Enter> to continue..."; cout.flush(); */
-  /*   cin.get(); */
-  /*   return; */
-  /* } */
-
-  /* bool get_decision(const string &prompt="") { */
-  /*   cout << prompt << " [Y/n] "; cout.flush(); */
-  /*   string raw; */
-  /*   while (true) { */
-  /*     cin >> raw; cin.clear(); cin.ignore(10000, '\n'); */
-  /*     if (raw == "Y" || raw == "y") { return true; } */
-  /*     if (raw == "N" || raw == "n") { return false; } */
-  /*     cout << "Choose again! [Y/n] "; cout.flush(); */
-  /*   } */
-  /*   throw std::runtime_error("Misc::get_decision() Unrecognized input!"); */
-  /* } */
 
   template <typename DataT>
   void show_query_result(vector<DataT> results) {

@@ -63,34 +63,26 @@ public:
   _HashCell_LogMessage &insert(const LogMessage &msgobj) {
     // get index
     size_t idx = this->hash(msgobj.get_message());
-    /* cout << "hash val recieved was: " << idx << " ==> " */
-    /*      << msgobj.get_message().substr(0, 40) << '\n'; */
     if (idx >= this->space) {
       throw std::range_error("MessageTable::insert() HashFunc miscalculated!");
     }
-    /* cout << idx << ": " << msgobj.get_message().substr(0, 40) << endl; */
     // find place to insert
     auto &msg_cell = this->table[idx];
     if (msg_cell.occupied()) {
       if (msg_cell.strict_equal(msgobj)) {  // check if exist
-        /* cout << "Log \"" << msgobj.get_message() << "\" already in table!" */
-        /*      << endl; */
         return msg_cell;    // HACK: It doesn't matter, just make sure
                             //       there *IS* one
       }
       auto pcell = &msg_cell;
       while (pcell->next != nullptr) {
         if (pcell->next->strict_equal(msgobj)) {  // check if exsit
-          /* cout << "Log \"" << msgobj.get_message() << "\" already in table!" */
-          /*      << endl; */
           return *(pcell->next);
         }
         // not this one ==> venture forth!
        pcell = pcell->next;
       } // end of while ==> pcell->next == nullptr
       try {
-        // pcell->next = new _HashCell_LogMessage();
-        pcell->set_next(new _HashCell_LogMessage());
+        pcell->next = new _HashCell_LogMessage();
       } catch (const std::bad_alloc &e) {
         cout << "Low Memory! Space allocation failed while inserting:\n"
              << msgobj.get_message() << endl;
@@ -175,7 +167,7 @@ public:
   HashFunc  hash = HashFunc(10, 200, 0);
 
 public:
-  
+
   inline SenderTable(size_t table_size = 200) {
     if (table_size == 0) {
       throw std::invalid_argument("SenderTable::SenderTable(...)::table_size "
@@ -213,14 +205,14 @@ public:
     auto &sndr_cell = this->table[idx];
     if (sndr_cell.occupied()) {
       if (sndr_cell == sender_name) {   // search chain head
-        sndr_cell.join_rec_to_end(&rec);
+        /* sndr_cell.join_rec_to_end(&rec); */
         return sndr_cell;
       } // not chain head, continue searching
       auto pcell = &sndr_cell;
       while (pcell->next != nullptr) {
         if (*(pcell->next) == sender_name) {    // sender found
           // no need for new cell
-          pcell->next->join_rec_to_end(&rec);
+          /* pcell->next->join_rec_to_end(&rec); */
           return *(pcell->next);
         }
         // sender not found *YET*, venture forth
@@ -235,11 +227,11 @@ public:
         throw e;
       }
       pcell->next->reset_cell(sender_name);
-      pcell->next->join_rec_to_end(&rec);
+      /* pcell->next->join_rec_to_end(&rec); */
       return *(pcell->next);
     } else {    // not occupied
       sndr_cell.reset_cell(sender_name);
-      sndr_cell.join_rec_to_end(&rec);
+      /* sndr_cell.join_rec_to_end(&rec); */
       return sndr_cell;
     }
     throw std::logic_error("SenderTable::link() Jumped out of if-else!");

@@ -28,8 +28,11 @@ int main(int argc, char **argv) {
     storage = Misc::load_from_file(argv[1]);
   } else if (argc == 1) {   // called without any arguments
     string filename;
-    cout << "Specify path to log dump: ";
-    cin >> filename;
+    cout << "Specify path to dump log: ";
+    cin >> filename; cin.clear(); cin.ignore(10000, '\n');
+    // dump log to file
+    system(string("touch" + filename).c_str());
+    system(string("syslog -F bsd > " + filename).c_str());
     storage = Misc::load_from_file(filename);
   }
 
@@ -47,7 +50,6 @@ int main(int argc, char **argv) {
     cout << "    SystemLogAnalysis (OS-X build) (by smdsbz)    \n"
          << "==================================================\n"
          << " 11. Query on message contents\n"
-         /* << " 12. Query on host\n" */
          << " 12. Query on sender\n"
          << " 13. General query\n"
          << "\n"
@@ -63,7 +65,7 @@ int main(int argc, char **argv) {
          << "Choose your operation: ";
     cout.flush();
     cin >> oper;    // get oper from user
-    cin.clear(); cin.ignore(10000, '\n');   // get rid of illegal chars
+    cin.clear(); cin.ignore(10000, '\n');   // get rid of '\n's
 
     switch (oper) {
 

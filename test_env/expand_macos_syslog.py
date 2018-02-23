@@ -30,5 +30,3 @@ with open(infile_name, 'rt') as infile:
 
             last, curr = curr, infile.readline()
 
-print('Unique count:', len(seen))
-
