@@ -295,6 +295,20 @@ public:
     return *this;
   }
 
+  vector<_Node *> &show_pattern(vector<_Node *> pat) {
+    if (pat.size() == 0) {
+      cout << "Empty pattern!" << endl;
+    } else {
+      // show pattern
+      for (auto &each : node_stack) {
+        cout << each->entity->get_message() << endl;
+      }
+      cout << "---- " << node_stack.size() << " message(s) in pattern" << endl;
+      cout << "     occured " << node_stack.back()->occur << " time(s) ----" << endl;
+    }
+    return pat;
+  }
+
   FPTree &show_result(size_t valve_freq=5) {
     vector<_Node *> node_stack;
     auto pnode = this->nodes;
@@ -307,13 +321,8 @@ public:
       node_stack.push_back(pnode);
       pnode = pnode->child;
     }
-    // show pattern
-    for (auto &each : node_stack) {
-      cout << each->entity->get_message() << endl;
-    }
-    cout << "---- " << node_stack.size() << " message(s) in pattern" << endl;
-    cout << "     occured " << node_stack.back()->occur << " time(s) ----\n" << endl;
-    cin.get();
+    /*this->*/show_pattern(node_stack);
+    if (cin.get() == 'q') { return *this; } // type 'q' to end and return
     // more patterns
     while (!node_stack.empty()) {
       auto next_node = node_stack.back()->brother;  // change route
@@ -323,15 +332,9 @@ public:
           node_stack.push_back(next_node);
           next_node = next_node->child;
         }
-        // reached another pattern with max depth
-        // show pattern
-        for (auto &each : node_stack) {
-          cout << each->entity->get_message() << endl;
-        }
-        cout << endl;
-        cout << "---- " << node_stack.size() << " message(s) in pattern" << endl;
-        cout << "     occured " << node_stack.back()->occur << " time(s) ----\n" << endl;
-        cin.get();
+        // reached another pattern, with max depth
+        /*this->*/show_pattern(node_stack);
+        if (cin.get() == 'q') { return *this; }
       } else {  // different route does not exist
                 // but current stack agrees requirements
       }
