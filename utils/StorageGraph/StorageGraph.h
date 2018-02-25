@@ -297,7 +297,7 @@ public:
       } // end for
     } else { throw std::invalid_argument("Misc::get_focus() Invalid axis!"); }
     // `prec` set at approx.
-    // move along time
+    // move along
     while (prec) {
       system("clear");
       cout << "======== Current Record ========" << endl;
@@ -311,19 +311,23 @@ public:
            << "    p - take a peak at all messages in the next 1 second"
            << endl;
       cout << "Your choice: "; cout.flush();
-      switch(cin.get()) {
+      char oper = '\0';
+      cin.get(oper); cin.clear(); cin.ignore(10000, '\n');
+      switch(oper) {
         case 'y': case 'Y': { return prec; }
         case 'n': { prec = prec->time_suc; break; }
-        case '\n': { prec = prec->msg_suc; break; }
+        case '\n': { break; }
         case 'm': { prec = prec->msg_suc; break; }
         case 'p': {
-          cin.clear(); cin.ignore(10000, '\n');
           vector<LogRecord *> recs = prec->peek(1);
-          for (auto &each : recs) {
+          for (size_t idx = 1, range = recs.size();
+               idx != range; ++idx) {
+            auto &each = recs[idx];
             cout << each->_repr() << endl;
             cout << "---- MORE ----"; getchar();
           }
           cout << "---- END ----"; getchar();
+          cin.clear(); cin.ignore(10000, '\n');
           break;
         }
         default: { break; }
@@ -332,6 +336,83 @@ public:
     cin.clear(); cin.ignore(10000, '\n');
     return nullptr;
   } // get_focus
+
+  Storage &delete_rec(LogRecord *&prec) {
+    // find `prec`'s predecessor on all dimentions
+    // - find on time axis
+    LogRecord *time_pre = nullptr;
+    if (this->messages->global_begin == prec) { /* pass */ ; }
+    else {  // not first
+      time_pre = this->messages->global_begin;
+      while (time_pre && time_pre->time_suc != prec) {
+        time_pre = time_pre->time_suc;
+      }
+      if (time_pre == nullptr) {
+        throw std::runtime_error("Storage::delete_rec() Time predecessor not "
+            "found!");
+      }
+    }
+    // - find on message axis
+    // TODO: Fails when message contains cr/lf
+    auto &msg_cell = (*this->messages)[prec->message];
+    LogRecord *msg_pre = nullptr;
+    if (msg_cell.entry == prec) { /* pass */ ; }
+    else {
+      msg_pre = msg_cell.entry;
+      while (msg_pre && msg_pre->msg_suc != prec) {
+        msg_pre = msg_pre->msg_suc;
+      }
+      if (msg_pre == nullptr) {
+        throw std::runtime_error("Storage::delete_rec() Message predecessor "
+            "not found!");
+      }
+    }
+    // - find on sender axis
+    auto &sndr_cell = (*this->senders)[prec->get_sender()];
+    LogRecord *sndr_pre = nullptr;
+    if (sndr_cell.entry == prec) { /* pass */ ; }
+    else {
+      sndr_pre = sndr_cell.entry;
+      while (sndr_pre && sndr_pre->sender_suc != prec) {
+        sndr_pre = sndr_pre->sender_suc;
+      }
+      if (sndr_pre == nullptr) {
+        throw std::runtime_error("Storage::delete_rec() Sender predecessor "
+            "not found!");
+      }
+    }
+    // re-chain
+    // `prec` is first / not first
+    if (time_pre == nullptr) {
+      this->messages->global_begin = prec->time_suc;
+    } else {
+      time_pre->time_suc = prec->time_suc;
+    }
+    if (msg_pre == nullptr) {
+      msg_cell.entry = prec->msg_suc;
+    } else {
+      msg_pre->msg_suc = prec->msg_suc;
+    }
+    if (sndr_pre == nullptr) {
+      sndr_cell.entry = prec->sender_suc;
+    } else {
+      sndr_pre->sender_suc = prec->sender_suc;
+    }
+    // check if `prec` is end of chain
+    if (this->messages->global_end == prec) {
+      this->messages->global_end = time_pre;
+    }
+    if (msg_cell.end == prec) {
+      msg_cell.end = msg_pre;
+    }
+    if (sndr_cell.end == prec) {
+      sndr_cell.end = sndr_pre;
+    }
+    // free `prec`
+    delete prec;
+    prec = nullptr;
+    return *this;
+  }
 
 };
 

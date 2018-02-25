@@ -115,7 +115,7 @@ public:
   }
 
   _HashCell_LogMessage &operator[](const LogMessage &msgobj) {
-    auto *pcell = this->table + hash( msgobj.get_message() );
+    auto pcell = this->table + hash( msgobj.get_message() );
     while ( pcell && (pcell->strict_equal(msgobj) == false) ) {
       pcell = pcell->next;
     }
@@ -125,6 +125,32 @@ public:
     }
     // pcell != nullptr ==> match found!
     return *pcell;
+  }
+
+  // TODO: Fails when containing cr/lf
+  /* _HashCell_LogMessage &operator[](const LogMessage *pmsg) { */
+  /*   auto pcell = this->table + hash(pmsg->get_message()); */
+  /*   while (pcell && !(&pcell->data == pmsg)) { */
+  /*     pcell = pcell->next; */
+  /*   } */
+  /*   if (pcell == nullptr) { */
+  /*     throw std::overflow_error(string("MessageTable::operator[LogMessage *] " */
+  /*         "No match found for: ") + pmsg->get_message()); */
+  /*   } */
+  /*   return *pcell; */
+  /* } */
+
+  _HashCell_LogMessage &operator[](const LogMessage *pmsg) {
+    auto pcell = this->table;
+    for (size_t idx = 0, range = this->space; idx != range; ++idx) {
+      pcell = this->table + idx;
+      while (pcell) {
+        if (&pcell->data == pmsg) { return *pcell; }
+        pcell = pcell->next;
+      }
+    }
+    throw std::overflow_error(string("MessageTable::operator[LogMessage *] "
+        "No match found for: ") + pmsg->get_message());
   }
 
   _HashCell_LogMessage &operator[](const string &msg) {
@@ -239,7 +265,7 @@ public:
 
   _HashCell_string &operator[](const string &sender) {
     auto pcell = this->table + hash(sender);
-    while (pcell && (*pcell != sender)) { pcell = pcell->next; }
+    while (pcell && (pcell->data != sender)) { pcell = pcell->next; }
     if (pcell == nullptr) {
       throw std::overflow_error(string("SenderTable::operator[sender] ")
           + "No match found for: " + sender);

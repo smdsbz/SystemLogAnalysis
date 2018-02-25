@@ -65,7 +65,8 @@ public:
   }
 
   inline bool strict_equal(const LogMessage &msgobj) {
-    return this->data == msgobj;
+    /* return this->data == msgobj; */
+    return &this->data == &msgobj;
   }
 
   inline bool value_equal(const LogMessage &msgobj) {

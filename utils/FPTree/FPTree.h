@@ -111,6 +111,28 @@ public:
     this->storage = s;
   }
 
+  ~FPTree() {
+    vector<_Node *> node_stack;
+    auto pnode = this->nodes;
+    // get first branch
+    while (pnode) {
+      node_stack.push_back(pnode);
+      pnode = pnode->child;
+    }
+    // pre-order traverse and free `_Node`s
+    while (!node_stack.empty()) {
+      pnode = node_stack.back();
+      auto next_node = node_stack.back()->brother;
+      node_stack.pop_back(); delete pnode;  // free end of current branch
+      // get another branch
+      while (next_node) {
+        node_stack.push_back(next_node);
+        next_node = next_node->child;
+      }
+    }   // pre-order traverse
+    return;
+  }
+
   _Header &operator[](_HashCell_LogMessage *p) {
     // check if `p` is in `headers`
     for (auto &each : this->headers) {
@@ -285,7 +307,7 @@ public:
     for (auto &each : node_stack) {
       cout << each->entity->get_message() << endl;
     }
-    cout << node_stack.size() << " messages in pattern" << endl;
+    cout << node_stack.size() << " message(s) in pattern" << endl;
     cout << "---- occured " << node_stack.back()->occur << " times ----\n" << endl;
     // more patterns
     while (!node_stack.empty()) {
@@ -301,15 +323,11 @@ public:
         for (auto &each : node_stack) {
           cout << each->entity->get_message() << endl;
         }
-        cout << node_stack.size() << " messages in pattern" << endl;
+        cout << endl;
+        cout << node_stack.size() << " message(s) in pattern" << endl;
         cout << "---- occured " << node_stack.back()->occur << " times ----\n" << endl;
       } else {  // different route does not exist
                 // but current stack agrees requirements
-        /* // show pattern only if `occur` differs */
-        /* for (auto &each : node_stack) { */
-        /*   cout << each->entity->get_message() << endl; */
-        /* } */
-        /* cout << "---- occured " << node_stack.back()->occur << " times ----\n" << endl; */
       }
     }   // stack now empty
     return *this;

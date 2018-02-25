@@ -104,33 +104,34 @@ LogDate::LogDate(const string &str) {
 
 LogDate &
 LogDate::operator+(const size_t sec) {
+  auto ret = *this;
   for (size_t remain = sec; remain != 0; --remain) {
-    time.sec = (time.sec + 1) % 60;
+    ret.time.sec = (ret.time.sec + 1) % 60;
     // forward detect
-    if (time.sec != 0) { continue; }
-    time.min = (time.min + 1) % 60;
-    if (time.min != 0) { continue; }
-    time.hor = (time.hor + 1) % 24;
-    if (time.hor != 0) { continue; }
-    // time.hor == 0: forward a day
-    time.dat = time.dat + 1;
+    if (ret.time.sec != 0) { continue; }
+    ret.time.min = (ret.time.min + 1) % 60;
+    if (ret.time.min != 0) { continue; }
+    ret.time.hor = (ret.time.hor + 1) % 24;
+    if (ret.time.hor != 0) { continue; }
+    // ret.time.hor == 0: forward a day
+    ret.time.dat = ret.time.dat + 1;
     // forward a month
-    switch (time.mon) {
+    switch (ret.time.mon) {
       case 1: case 3: case 5: case 7: case 8: case 10: case 12: {
-        if (time.dat == 0) {    // 32 wrap-around
-          time.mon = time.mon + 1;
-          if (time.mon == 13) { time.mon = 1;}
+        if (ret.time.dat == 0) {    // 32 wrap-around
+          ret.time.mon = ret.time.mon + 1;
+          if (ret.time.mon == 13) { ret.time.mon = 1;}
         }
       }
       case 4: case 6: case 9: case 11: {
-        if (time.dat == 31) {
-          time.mon = time.mon + 1;
+        if (ret.time.dat == 31) {
+          ret.time.mon = ret.time.mon + 1;
         }
       }
       case 2: { // HACK: Unfortunately, log does *NOT* record year.
                 //       Treating Feb has 29 days
-        if (time.dat == 30) {   // TODO: Auto year recognition
-          time.mon = time.mon + 1;
+        if (ret.time.dat == 30) {   // TODO: Auto year recognition
+          ret.time.mon = ret.time.mon + 1;
         }
       }
     }   // end of switch

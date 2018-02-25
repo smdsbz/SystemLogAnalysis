@@ -55,9 +55,6 @@ int main(int argc, char **argv) {
          << " 13. General query\n"
          << "\n"
          << " 21. Insert new log manually\n"
-         << "\n"
-         << " 31. Remove single log from buffered\n"
-         << " 32. Remove message from buffered\n"
          << "- - - - - - - - - - - - - - - - - - - - - - - - -\n"
          << " 4 . Run analysis\n"
          << "- - - - - - - - - - - - - - - - - - - - - - - - -\n"
@@ -106,22 +103,37 @@ int main(int argc, char **argv) {
         bool fuzzy = get_decision("Use fuzzy find?");
         // finished with input
         LogRecord *cursor = storage->get_focus(in, axis, fuzzy);
+        system("clear");
         if (cursor == nullptr) {
           cout << "Nothing is selected!" << endl;
         } else {
-          cout << cursor->get_date() << endl;
-          cout << cursor->get_sender() << endl;
-          cout << cursor->get_message() << endl;
-        }
+          cout << "======== Current Record ========" << endl;
+          cout << "Date: " << cursor->get_date() << endl;
+          cout << "Sender: " << cursor->get_sender() << endl;
+          cout << "Message: \n" << cursor->get_message() << endl;
+          cout << "======== Options ========" << endl;
+          cout << "    d - delete this record" << endl;
+          cout << "    0 - cancel" << endl;
+          cout << "Your choice: "; cout.flush();
+          char opt = '\0';
+          cin.get(opt); cin.clear(); cin.ignore(10000, '\n');
+          switch (opt) {
+            case 'd': {
+              storage->delete_rec(cursor);
+              break;
+            }
+            case '0': case '\n': { break; }
+            default: { break; }
+          }
+        }   // endif
         show_pause(); break;
       }
 
       case 4: {
         system("clear");
-        cout << "Test Run - FPTree::_first_run()" << endl;
         auto analysis = FPTree(storage);
         analysis.run(10, 1);
-        system("clear");
+        show_pause();
         analysis.show_result(10);
         show_pause(); break;
       }

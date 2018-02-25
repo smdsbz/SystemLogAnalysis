@@ -279,8 +279,8 @@ public:
     ret.push_back(this);    // add self to pattern
     auto border = this->date + sec;
     for (LogRecord *each = this->time_suc; each; each = each->time_suc) {
-      // NOTE: No self-repeat!
-      if (each->message == this->message) { return ret; }
+      // NOTE: Self-repeat only once!
+      if (each->message == this->message) { ret.push_back(each); return ret; }
       if (each->date > border) { break; }
       ret.push_back(each);
     }

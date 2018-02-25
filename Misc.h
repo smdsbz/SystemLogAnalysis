@@ -41,22 +41,21 @@ namespace Misc {
       cout << "No result!" << endl;
       return;
     }
-    size_t cnt = 0;
     for (auto &rec : results) {
       system("clear");
       cout << rec->_repr() << endl;   // HACK: Make sure the method
                                       //       `_repr()` is implemented
-      cout << "---- MORE (h for help) ----"; cout.flush();
+      cout << "---- MORE ----"; cout.flush();
       char op = cin.get();
       switch (op) {
         case 'n': { break; }
-        case 'q': { show_pause(); return; }
+        case '\n': { break; }
+        case 'q': { return; }
         default: { break; }
       } // end switch
     }
     cout << "---- END ----";
     cin.clear(); cin.ignore(10000, '\n');
-    cout << cnt << " log(s) shown in total." << endl;
     return;
   }
 
