@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
     cout << "Specify path to dump log: ";
     cin >> filename; cin.clear(); cin.ignore(10000, '\n');
     // dump log to file
-    system(string("touch" + filename).c_str());
+    system(string("touch " + filename).c_str());
     system(string("syslog -F bsd > " + filename).c_str());
     cout << "Logs successfully dumped from console to " << filename << endl;
     storage = Misc::load_from_file(filename);
@@ -133,7 +133,9 @@ int main(int argc, char **argv) {
         system("clear");
         auto analysis = FPTree(storage);
         analysis.run(10, 1);
+        cout << "Finished analyzing!" << endl;
         show_pause();
+        system("clear");
         analysis.show_result(10);
         show_pause(); break;
       }

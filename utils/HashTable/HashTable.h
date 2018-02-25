@@ -140,6 +140,7 @@ public:
   /*   return *pcell; */
   /* } */
 
+  // HACK: Current work-around for the problem stated above
   _HashCell_LogMessage &operator[](const LogMessage *pmsg) {
     auto pcell = this->table;
     for (size_t idx = 0, range = this->space; idx != range; ++idx) {

@@ -64,9 +64,10 @@ public:
     return *this;
   }
 
+  inline _HashCell_LogMessage &inc_occur() { this->count += 1; return *this; }
+
   inline bool strict_equal(const LogMessage &msgobj) {
-    /* return this->data == msgobj; */
-    return &this->data == &msgobj;
+    return this->data == msgobj;
   }
 
   inline bool value_equal(const LogMessage &msgobj) {
