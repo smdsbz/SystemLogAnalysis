@@ -14,6 +14,7 @@ using std::vector;
 #include "./utils/StorageGraph/StorageGraph.h"
 #include "./utils/FPTree/FPTree.h"
 #include "./Misc.h"
+using Misc::get_block_input;
 #include "./utils/UIGadgets/UIGadgets.h"
 using UIGadgets::show_pause; using UIGadgets::get_decision;
 
@@ -109,10 +110,12 @@ int main(int argc, char **argv) {
         } else {
           cout << "======== Current Record ========" << endl;
           cout << "Date: " << cursor->get_date() << endl;
+          cout << "Host: " << cursor->get_host() << endl;
           cout << "Sender: " << cursor->get_sender() << endl;
           cout << "Message: \n" << cursor->get_message() << endl;
           cout << "======== Options ========" << endl;
           cout << "    d - delete this record" << endl;
+          cout << "    a - add new log after this one" << endl;
           cout << "    0 - cancel" << endl;
           cout << "Your choice: "; cout.flush();
           char opt = '\0';
@@ -120,6 +123,19 @@ int main(int argc, char **argv) {
           switch (opt) {
             case 'd': {
               storage->delete_rec(cursor);
+              cout << "Successfully deleted record!" << endl;
+              break;
+            }
+            case 'a': {
+              auto log_message = get_block_input(/*end_flag=*/"EOF",
+                                                 /*with_tab=*/true);
+              try {
+                storage->add_after_rec(cursor, log_message);
+                cout << "Successfully added record!" << endl;
+              } catch (const std::runtime_error &e) {
+                cout << "Failed adding record!\n"
+                     << "Do spell checking before hitting <Enter>!" << endl;
+              }
               break;
             }
             case '0': case '\n': { break; }
@@ -132,11 +148,12 @@ int main(int argc, char **argv) {
       case 4: {
         system("clear");
         auto analysis = FPTree(storage);
-        analysis.run(10, 1);
+        analysis.run(/*min_freq=*/10,
+                     /*max_delay=*/1);
         cout << "Finished analyzing!" << endl;
         show_pause();
         system("clear");
-        analysis.show_result(10);
+        analysis.show_result(/*valve_freq=*/10);
         show_pause(); break;
       }
 

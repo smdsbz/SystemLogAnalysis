@@ -59,6 +59,30 @@ namespace Misc {
     return;
   }
 
+  string get_block_input(const string &end_flag="EOF",
+                         const bool with_tab=true) {
+    cout << "(To end input, start a new line and type \"EOF\" followed"
+         << " by <Enter>)" << endl;
+    string ret;
+    string line;
+    string prepender = "\n";    // prepend it before new line
+    if (with_tab) { prepender = "\n\t"; }
+    // get first line
+    cout << "> ";
+    std::getline(cin, line);
+    if (line == "EOF") { return ret; }
+    ret.append(line);
+    // get new lines
+    while (true) {
+      cout << "> ";
+      if (with_tab) { cout << '\t'; }
+      std::getline(cin, line);
+      if (line == "EOF") { break; }
+      ret.append(string(prepender) + line);
+    }
+    return ret;
+  }
+
 }
 
 #endif

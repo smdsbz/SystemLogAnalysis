@@ -295,16 +295,16 @@ public:
     return *this;
   }
 
-  vector<_Node *> &show_pattern(vector<_Node *> pat) {
+  vector<_Node *> &show_pattern(vector<_Node *> &pat) {
     if (pat.size() == 0) {
       cout << "Empty pattern!" << endl;
     } else {
       // show pattern
-      for (auto &each : node_stack) {
+      for (auto &each : pat) {
         cout << each->entity->get_message() << endl;
       }
-      cout << "---- " << node_stack.size() << " message(s) in pattern" << endl;
-      cout << "     occured " << node_stack.back()->occur << " time(s) ----" << endl;
+      cout << "---- " << pat.size() << " message(s) in pattern" << endl;
+      cout << "     occured " << pat.back()->occur << " time(s) ----" << endl;
     }
     return pat;
   }
@@ -321,22 +321,32 @@ public:
       node_stack.push_back(pnode);
       pnode = pnode->child;
     }
-    /*this->*/show_pattern(node_stack);
+    this->show_pattern(node_stack);
     if (cin.get() == 'q') { return *this; } // type 'q' to end and return
     // more patterns
     while (!node_stack.empty()) {
+      auto prev_pat_occur = node_stack.back()->occur;
       auto next_node = node_stack.back()->brother;  // change route
-      node_stack.pop_back();
+      node_stack.pop_back();    // quit current pattern, *ONE* level at a time
       if (next_node && next_node->occur >= valve_freq) {    // if different route exists
         while (next_node && next_node->occur >= valve_freq) {   // venture deep
           node_stack.push_back(next_node);
           next_node = next_node->child;
         }
-        // reached another pattern, with max depth
-        /*this->*/show_pattern(node_stack);
+        // reached another pattern, at max depth
+        this->show_pattern(node_stack);
         if (cin.get() == 'q') { return *this; }
-      } else {  // different route does not exist
-                // but current stack agrees requirements
+      } else if (next_node == nullptr) {  // different route does not exist,
+                                          // i.e. still on previous pattern
+        // NOTE: Pattern occurance changed, could be viewed as a
+        //       different pattern.
+        if (node_stack.back()->occur != prev_pat_occur) {
+          this->show_pattern(node_stack);
+          if (cin.get() == 'q') { return *this; }
+        }
+      } else { // different route *DOSE* exist,
+               // but its occurance is less than `valve_freq`
+        /* pass */ ;
       }
     }   // stack now empty
     return *this;

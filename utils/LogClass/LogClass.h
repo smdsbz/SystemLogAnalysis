@@ -32,9 +32,9 @@ const string RE_WHOLE = (string("((?:") + _re_month
                             //   eg "Jan  1 19:43:19"
     + "([a-zA-Z\\-]+) "     // host name (lower/upper and short-dash)
                             //   eg "zhuxiaoguangs-MacBook-Air"
-    + "([^\n]+?)\\[[0-9]+\\][:]? "  // sender (lower) and threadID
-                                    //   eg "steam_osx[584]"
-    + "([^\n]+)$";          // message (anything hence to the eol)
+    + "([\\s\\S]+?)[\\n]?\\[[0-9]+\\][:]? " // sender (lower) and threadID
+                                            //   eg "steam_osx[584]"
+    + "([\\s\\S]+)";        // message (anything hence to the eol)
 
 
 /****** Class Declarations ******/
@@ -263,6 +263,7 @@ public:
   inline string get_message() const { return this->message->get_message(); }
   inline string get_date()    const { return this->date.str(); }
   inline string get_sender()  const { return this->message->get_sender(); }
+  inline string get_host()    const { return this->message->get_host(); }
   inline string _repr() const {
     /* return this->get_message(); */
     string datestr  = "Date :"      + this->get_date();
@@ -275,13 +276,15 @@ public:
   inline iterator begin(axis_type axis=TIME) { return iterator(*this, axis); }
   inline iterator end(axis_type axis=TIME) { return iterator(nullptr, axis); }
 
-  vector<LogRecord *> peek(size_t sec=5) {
+  vector<LogRecord *> peek(size_t sec=5,
+                           const bool allow_repeat=false) {
     vector<LogRecord *> ret;
     ret.push_back(this);    // add self to pattern
     auto border = this->date + sec;
     for (LogRecord *each = this->time_suc; each; each = each->time_suc) {
-      // NOTE: Self-repeat only once!
-      if (each->message == this->message) { ret.push_back(each); return ret; }
+      if (!allow_repeat && each->message == this->message) {
+        ret.push_back(each); return ret;
+      }
       if (each->date > border) { break; }
       ret.push_back(each);
     }

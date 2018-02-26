@@ -58,7 +58,7 @@ public:
     // prepare `LogMessage` content
     auto msg = LogMessage();
     try {
-      msg = LogMessage(log, false);
+      msg = LogMessage(log, /*message_only=*/false);
     } catch (const std::runtime_error &e) {
       // log passed in can't match regex
       throw e;
@@ -66,9 +66,9 @@ public:
     // prepare `LogRecord` content
     LogRecord *prec = nullptr;
     try {
-      prec = new LogRecord(log, true); // NOTE: `LogDate` included!
+      prec = new LogRecord(log, /*whole_log=*/true);
     } catch (const std::bad_alloc &e) {
-      std::cerr << "Log Memory! Space allocation failed!" << endl;
+      cout << "Low Memory! Space allocation failed!" << endl;
       throw e;
     }
     try {
@@ -117,6 +117,93 @@ public:
     return *prec;
   }
 
+  LogRecord &add_after_rec(LogRecord *prec, const string &log_whole) {
+    if (prec == nullptr) {
+      throw std::invalid_argument("Storage::add_after_rec() Pointer to "
+          "LogRecord should not be null!");
+    }
+    // build LogMessage
+    auto msg = LogMessage();
+    try {
+      msg = LogMessage(log_whole, /*message_only=*/false);
+    } catch (const std::runtime_error &e) { throw e; }
+    // create LogRecord
+    LogRecord *new_rec = nullptr;
+    try {
+      new_rec = new LogRecord(log_whole, /*whole_log=*/true);
+    } catch (const std::bad_alloc &e) {
+      cout << "Low Memory! Space allocation failed!" << endl;
+      throw e;
+    }
+    // LogDate check
+    if (new_rec->date < prec->date  // earlier than before?
+          || (prec->time_suc        // or later than after?
+              && new_rec->date > prec->time_suc->date)) {
+      cout << "The log's date info does not fit here!" << endl;
+      cout << "Should be in range [ " << prec->date.str() << ", ";
+      if (prec->time_suc) { cout << prec->time_suc->date.str(); }
+      else { cout << "+inf"; }
+      cout << " ]!" << endl;
+      throw std::runtime_error("Storage::add_after_rec() New LogRecord's "
+          "date info does not fit!");
+    }
+    // add it to Storage
+    try {
+      auto &msg_cell = this->messages->insert(msg);
+      new_rec->set_message(msg_cell.data);
+      auto &sndr_cell = this->senders->link(*new_rec);
+      // link `new_rec` into time axis
+      new_rec->time_suc = prec->time_suc;
+      prec->time_suc = new_rec;
+      // linking to end?
+      if (this->messages->global_end == prec) {
+        this->messages->global_end = new_rec;
+      }
+      // link `new_rec` in message / sender axis
+      LogRecord *msg_pre = nullptr;
+      LogRecord *sndr_pre = nullptr;
+      // iter over entire table to locate `msg_pre` and `sndr_pre`
+      for (auto cur_rec = this->messages->global_begin;
+           cur_rec && cur_rec != new_rec;
+           cur_rec = cur_rec->time_suc) {
+        // update `msg_pre`
+        if (cur_rec->message == new_rec->message) { msg_pre = cur_rec; }
+        // update `sndr_pre`
+        if (cur_rec->get_sender() == new_rec->get_sender()) {
+          sndr_pre = cur_rec;
+        }
+      }
+      // if is first log of this message / sender?
+      if (msg_pre == nullptr) {
+        msg_cell.entry = new_rec;
+      } else {
+        // link into message axis
+        new_rec->msg_suc = msg_pre->msg_suc;
+        msg_pre->msg_suc = new_rec;
+      }
+      if (sndr_pre == nullptr) {
+        sndr_cell.entry = new_rec;
+      } else {
+        // link into sender axis
+        new_rec->sender_suc = sndr_pre->sender_suc;
+        sndr_pre->sender_suc = new_rec;
+      }
+      // if is last log of this message / sender?
+      if (msg_cell.end == msg_pre) {
+        msg_cell.end = new_rec;
+      }
+      if (sndr_cell.end == sndr_pre) {
+        sndr_cell.end = new_rec;
+      }
+      // manually inc `occur` of this message
+      msg_cell.inc_occur();
+    } catch (const std::bad_alloc &e) {
+      // caused by `HashCell` allocation
+      throw e;
+    }
+    return *new_rec;
+  } // add_after_rec
+
   Storage &read_from_file(const string &filename) {
     fstream file;
     // get filesize - for progress bar
@@ -147,7 +234,7 @@ public:
       pbar.draw_on_current_line(0);
       while (getline(file, line)) {
         cur_char_cnt += line.length();
-        if (log_cnt % 500 == 0) {   // NOTE: Display too often may cause
+        if (log_cnt % 300 == 0) {   // NOTE: Display too often may cause
                                     //       performance issue!
           pbar.draw_on_current_line(cur_char_cnt * 100 / char_cnt);
         }
@@ -263,12 +350,14 @@ public:
                        const string &axis,
                        const bool fuzzy=false) {
     LogRecord *prec = nullptr;
-    if (axis == "message") {
+    if (axis == "message") {        // first query via message
       auto candidate = query_on_message(in, fuzzy);
       if (candidate.empty()) { return nullptr; }
       for (auto &each : candidate) {
         system("clear");
-        cout << each->_repr() << endl;
+        cout << "Host: " << each->data.get_host() << endl;
+        cout << "Sender: " << each->data.get_sender() << endl;
+        cout << "Message:\n" << each->data.get_message() << endl;
         bool is_correct;
         try {
           is_correct = get_decision("Is this the message you're "
@@ -279,7 +368,7 @@ public:
         }
         if (is_correct) { prec = each->entry; break; }
       } // end for
-    } else if (axis == "sender") {
+    } else if (axis == "sender") {  // first query via sender
       auto candidate = query_on_sender(in, fuzzy);
       if (candidate.empty()) { return nullptr; }
       for (auto &each : candidate) {
@@ -302,13 +391,14 @@ public:
       system("clear");
       cout << "======== Current Record ========" << endl;
       cout << "Date: " << prec->get_date() << endl;
+      cout << "Host: " << prec->get_host() << endl;
       cout << "Sender: " << prec->get_sender() << endl;
       cout << "Message: \n" << prec->get_message() << endl;
       cout << "======== Options ========" << endl;
       cout << "    y - this is the record I'm looking for\n"
            << "    n - next along time\n"
            << "    m - next occurence of this massage\n"
-           << "    p - take a peak at all messages in the next 1 second"
+           << "    p - take a peak at all messages in the next 5 seconds"
            << endl;
       cout << "Your choice: "; cout.flush();
       char oper = '\0';
@@ -319,21 +409,22 @@ public:
         case '\n': { break; }
         case 'm': { prec = prec->msg_suc; break; }
         case 'p': {
-          vector<LogRecord *> recs = prec->peek(1);
+          cout << "---- PEAKING ----" << endl;
+          vector<LogRecord *> recs = prec->peek(5, /*allow_repeat=*/true);
           for (size_t idx = 1, range = recs.size();
                idx != range; ++idx) {
             auto &each = recs[idx];
             cout << each->_repr() << endl;
-            cout << "---- MORE ----"; getchar();
+            cout << "---- MORE ----";
+            if (cin.get() == 'q') { break; }
           }
-          cout << "---- END ----"; getchar();
-          cin.clear(); cin.ignore(10000, '\n');
+          cout << "---- END ----"; cin.get();
           break;
         }
         default: { break; }
       }
+      cin.clear(); cin.ignore(10000, '\n');
     }   // end while
-    cin.clear(); cin.ignore(10000, '\n');
     return nullptr;
   } // get_focus
 
