@@ -260,8 +260,7 @@ public:
      * 函数功能：生成一个迭代器，并把初次迭代位置放在传入的实例处
      * 返回值：  生成的迭代器（LogRecord::iterator)
      */
-    inline iterator(LogRecord &start,
-                    const axis_type passed_axis=TIME) {
+    inline iterator(LogRecord &start, const axis_type passed_axis=TIME) {
       this->pRec = &start;
       this->axis = passed_axis;
       return;
@@ -272,8 +271,7 @@ public:
      * 函数功能：生成一个迭代器，并把初次迭代位置放在传入的实例处
      * 返回值：  生成的迭代器（LogRecord::iterator)
      */
-    inline iterator(LogRecord *p,
-                    const axis_type passed_axis=TIME) {
+    inline iterator(LogRecord *p, const axis_type passed_axis=TIME) {
       this->pRec = p;
       this->axis = passed_axis;
       return;
@@ -325,8 +323,8 @@ public:
   explicit LogRecord(const string &re_mathed_date_string, const bool whole=false);
 
   explicit LogRecord(const LogRecord &other) {
-    this->message = other.message;
-    this->date    = other.date;
+    this->message    = other.message;
+    this->date       = other.date;
     this->time_suc   = nullptr;
     this->msg_suc    = nullptr;
     this->sender_suc = nullptr;
@@ -378,7 +376,6 @@ public:
   inline string get_sender()  const { return this->message->get_sender(); }
   inline string get_host()    const { return this->message->get_host(); }
   inline string _repr() const {
-    /* return this->get_message(); */
     string datestr  = "Date :"      + this->get_date();
     string snderstr = "Sender: "    + this->get_sender();
     string msgstr   = "Message: \n" + this->get_message();
