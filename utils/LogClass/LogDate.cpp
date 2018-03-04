@@ -18,6 +18,13 @@ using std::smatch; using std::ssub_match;
 
 /****** LogDate ******/
 
+/* 函数名称：_month_str_to_ushort
+ * 函数参数：月份英文简写（string）
+ * 函数功能：将月份简写转化成对应的月份数字码
+ * 返回值：  月份数字码（unsigned short）
+ * 抛出异常：std::invalid_argument
+ *               当传入的不是标准的月份英文简写时抛出
+ */
 unsigned short
 _month_str_to_ushort(string str) {
   if (str == "Jan") { return  1; }
@@ -33,26 +40,39 @@ _month_str_to_ushort(string str) {
   if (str == "Nov") { return 11; }
   if (str == "Dec") { return 12; }
   else {
-    throw std::runtime_error("LogDate.cpp::_month_str_to_ushort() illegal "
+    throw std::invalid_argument("LogDate.cpp::_month_str_to_ushort() illegal "
         "month string");
   }
 }
 
-
+/* 函数名称：_month_ushort_to_str
+ * 函数参数：月份数字码（unsigned short)
+ * 函数功能：将月份数字码转化成对应的英文简写
+ * 返回值：  月份英文简写（string）
+ * 抛出异常：std::invalid_argument
+ *               当传入的月份数字码不在 1～12 的范围内时抛出
+ */
 string
 _month_ushort_to_str(unsigned short mon) {
   if (mon == 0 || mon > 12) {
-    throw std::runtime_error("LogDate.cpp::_month_ushort_to_str() illegal "
+    throw std::invalid_argument("LogDate.cpp::_month_ushort_to_str() illegal "
         "month number!");
   }
   return months[mon - 1];
 }
 
-
+/* 函数名称：_ushort_to_dualdigit
+ * 函数参数：两位数数字（unsigned short）
+ *           输出前导字符（string，默认为 "0"）
+ * 函数功能：将两位数数字转化成标准格式字符串
+ * 返回值：  数字字符串（string）
+ * 抛出异常：std::invalid_argument
+ *               当传入的前导字符为空时抛出
+ */
 string
 _ushort_to_dualdigit(unsigned short us, const string filler="0") {
   if (filler.empty()) {
-    throw std::length_error("LogDate.cpp:_ushort_to_dualdigit() "
+    throw std::invalid_argument("LogDate.cpp:_ushort_to_dualdigit() "
         "`filler` should not be empty!");
   }
   string ret;
@@ -69,10 +89,12 @@ LogDate::_init_to_zero() {
   return;
 }
 
+
 LogDate::LogDate() {
   _init_to_zero();
   return;
 }
+
 
 LogDate::LogDate(const string &str) {
   _init_to_zero();
@@ -81,10 +103,6 @@ LogDate::LogDate(const string &str) {
     smatch matches;     // store matched strings
     regex_match(str, matches, re); // do match
     if (matches.size() != 6) {  // match failed
-      // for (auto &each : matches) {
-      //   cout << each << " ";
-      // }
-      // cout << endl;
       throw std::runtime_error(string("LogDate.cpp::LogDate(str) `str` passed")
           + " in was illegal: " + std::to_string(matches.size()) + " found");
     }

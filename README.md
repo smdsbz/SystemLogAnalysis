@@ -3,6 +3,22 @@ Data-Structure Curriculum Design, Grade 2 First-Half, Topic 1
 
 ## LightBulbs
 
+### How to use?
+
+```
+$ make build
+```
+
+- Run without arguments
+```
+$ ./a.out
+```
+
+- Run with argument
+```
+$ ./a.out path/to/dumped-syslog
+```
+
 ### Structure
 
 ```
@@ -18,12 +34,24 @@ SystemLogAnalysis/
 |   |   +-- HashTable.h
 |   |   +-- HashCell.cpp
 |   |   +-- HashTable_test.cpp
-|   +-- StorageGraph/
-|       +-- StorageGraph.h
+|   +-- StorageGraph/           // could query along multiple axes intuitively
+|   |   +-- StorageGraph.h
+|   +-- FPTree/                 // pattern digging, ack. Jiawei Han et. al.
+|   |   +-- FPTree.h
+|   +-- UIGadgets/
+|       +-- UIGadgets.h
+|
 +-- test_env/                   // all tests should be done in here
+|
++-- Misc.h                      // some UI logic helper funcs
++-- main.cpp
 +-- makefile
 ```
 
+### Starring
+
+- FP-Tree (Jiawei Han et. al.)
+- Adaptive HashTable, via tuning the *sigmoid* function
 
 ## Fun-Facts
 

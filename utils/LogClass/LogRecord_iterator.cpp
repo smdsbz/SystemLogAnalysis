@@ -44,7 +44,7 @@ LogRecord::iterator::operator++() {
 //   string sample = ("Jan  8 12:07:06 zhuxiaoguangs-MacBook-Air com.apple.x"
 //       "pc.launchd[1] (com.apple.preference.displays.MirrorDisplays): Service "
 //       "only ran for 0 seconds. Pushing respawn out by 10 seconds.");
-// 
+//
 //   auto message = LogMessage(sample);
 //   LogRecord records[10] = { };
 //   for (size_t idx = 0; idx != 10; ++idx) {
@@ -52,11 +52,11 @@ LogRecord::iterator::operator++() {
 //     records[idx].set_message(message);
 //     if (idx != 9) { records[idx].set_time_successor(records[idx+1]); }
 //   }
-// 
+//
 //   for (auto each_record : records) {
 //     cout << each_record.get_message() << endl;
 //   }
-// 
+//
 //   return 0;
 // }
 
