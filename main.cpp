@@ -94,14 +94,19 @@ int main(int argc, char **argv) {
 
       case 13: {
         string axis;
-        for (; axis != "message" && axis != "sender";) {
+        for (; axis != "message"
+                && axis != "sender"
+                && axis != "time";) {
           cout << "Query range (message/sender): "; cout.flush();
           getline(cin, axis);
         }
         string in;
         cout << "Content: "; cout.flush();
         getline(cin, in);
-        bool fuzzy = get_decision("Use fuzzy find?");
+        bool fuzzy = false;
+        if (axis != "time") {
+          fuzzy = get_decision("Use fuzzy find?");
+        }
         // finished with input
         LogRecord *cursor = storage->get_focus(in, axis, fuzzy);
         system("clear");

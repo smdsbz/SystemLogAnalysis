@@ -41,8 +41,11 @@ public:
 
   ~MessageTable() {
     // free cells in chain
+    // for each HashCell
     for (size_t cell_cur = 0; cell_cur != this->space; ++cell_cur) {
       auto *pcell = table + cell_cur;
+      // for each valid cell in isotopes
+      // free first in isotopes, until there's no more isotope
       while (pcell->next != nullptr) {
         auto *to_free = pcell->next;
         pcell->next = to_free->next;
@@ -56,9 +59,11 @@ public:
   }
 
   /* 函数名称：insert
-   * 函数参数：要插入的 LogMessage，msg
-   * 函数功能：将 msg 添加到查找表中
-   * 返回值：  插入成功返回插入位置的引用，否则抛出对应错误
+   * 函数参数：要插入的 msg（LogMessage）
+   * 函数功能：将 msg 添加到查找表中；若已存在，则返回相应位置
+   * 返回值：  插入/查找成功返回插入位置的引用，否则抛出对应错误
+   * 抛出异常：std::bad_alloc
+   *               内存申请失败时抛出
    */
   _HashCell_LogMessage &insert(const LogMessage &msgobj) {
     // get index
@@ -69,18 +74,18 @@ public:
     // find place to insert
     auto &msg_cell = this->table[idx];
     if (msg_cell.occupied()) {
-      if (msg_cell.strict_equal(msgobj)) {  // check if exist
+      if (msg_cell.strict_equal(msgobj)) {  // check if is header
         return msg_cell;    // HACK: It doesn't matter, just make sure
                             //       there *IS* one
       }
       auto pcell = &msg_cell;
       while (pcell->next != nullptr) {
-        if (pcell->next->strict_equal(msgobj)) {  // check if exsit
+        if (pcell->next->strict_equal(msgobj)) {  // check if is this isotope
           return *(pcell->next);
         }
-        // not this one ==> venture forth!
+        // not this one ==> next isotope
        pcell = pcell->next;
-      } // end of while ==> pcell->next == nullptr
+      } // end of while ==> not in isotopes
       try {
         pcell->next = new _HashCell_LogMessage();
       } catch (const std::bad_alloc &e) {
@@ -214,11 +219,9 @@ public:
    * 返回值：  对应该 LogRecord 的发送者在 SenderTable 中的存储位置
    */
   _HashCell_string &link(LogRecord &rec) {
-    // NOTE: There's actually no way of ensuring the `rec` isn't repeating!
-    //       So here I pretend that my users know what they are doing...
-    // get message address
-    auto pmsg = rec.message;
-    if (pmsg == nullptr) {
+    // NOTE: Manually `join_rec_to_end()` required!
+    // make sure the message field is not empty
+    if (rec.message == nullptr) {
       throw std::runtime_error("SenderTable::link() Invalid `massage` field!");
     }
     // get copy of sender_name

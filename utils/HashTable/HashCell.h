@@ -55,10 +55,9 @@ public:
     // Set message axis successor
     if (this->entry == nullptr) {   // first ever
       this->entry = prec;
-      this->end = prec;
-      return *this;
-    }   // not first
-    this->end->msg_suc = prec;
+    } else {    // not first
+      this->end->msg_suc = prec;
+    }
     this->end = prec;
     this->count += 1;
     return *this;

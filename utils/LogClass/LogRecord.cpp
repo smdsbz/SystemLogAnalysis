@@ -12,7 +12,7 @@ using std::string;
 /****** LogRecord ******/
 
 LogRecord::LogRecord(const string &str, const bool whole) {
-  // NOTE: Only set date, other should be done in Graph.
+  // NOTE: Only set date, other should be done in Storage.
   try {
     if (whole == true) { date = LogDate(str.substr(0, 15)); }   // static hack
     else { date = LogDate(str); }

@@ -37,7 +37,7 @@ public:
   inline Storage(size_t msgtable_size = 5000,
                  size_t sdrtable_size = 200) {
     messages = new MessageTable(msgtable_size);
-    senders = new SenderTable(sdrtable_size);
+    senders  = new SenderTable(sdrtable_size);
     return;
   }
 
@@ -109,7 +109,7 @@ public:
       prec = new LogRecord(*this->messages->global_end);
     } catch (const std::bad_alloc &e) { throw e; }
     auto &msg = *prec->message;
-    auto &msg_cell = this->messages->insert(msg);   // won't insert, only find
+    auto &msg_cell  = this->messages->insert(msg);  // won't insert, only find
     auto &sndr_cell = this->senders->link(*prec);
     this->messages->join_rec_to_end(prec);
     msg_cell.join_rec_to_end(prec);
@@ -130,7 +130,7 @@ public:
     // create LogRecord
     LogRecord *new_rec = nullptr;
     try {
-      new_rec = new LogRecord(log_whole, /*whole_log=*/true);
+      new_rec = new LogRecord(log_whole, /*whole=*/true);
     } catch (const std::bad_alloc &e) {
       cout << "Low Memory! Space allocation failed!" << endl;
       throw e;
@@ -144,6 +144,7 @@ public:
       if (prec->time_suc) { cout << prec->time_suc->date.str(); }
       else { cout << "+inf"; }
       cout << " ]!" << endl;
+      delete new_rec;
       throw std::runtime_error("Storage::add_after_rec() New LogRecord's "
           "date info does not fit!");
     }
@@ -160,12 +161,15 @@ public:
         this->messages->global_end = new_rec;
       }
       // link `new_rec` in message / sender axis
-      LogRecord *msg_pre = nullptr;
+      LogRecord *msg_pre  = nullptr;
       LogRecord *sndr_pre = nullptr;
-      // iter over entire table to locate `msg_pre` and `sndr_pre`
+      // iter over **ENTIRE** table to locate `msg_pre` and `sndr_pre`
       for (auto cur_rec = this->messages->global_begin;
            cur_rec && cur_rec != new_rec;
-           cur_rec = cur_rec->time_suc) {
+           cur_rec = cur_rec->time_suc) {   // NOTE: For records may have
+                                            //       *identical* time stamps,
+                                            //       stupidly go along time is
+                                            //       the best u can get.
         // update `msg_pre`
         if (cur_rec->message == new_rec->message) { msg_pre = cur_rec; }
         // update `sndr_pre`
@@ -173,23 +177,21 @@ public:
           sndr_pre = cur_rec;
         }
       }
-      // if is first log of this message / sender?
-      if (msg_pre == nullptr) {
+      // linking into axes
+      if (msg_pre == nullptr) {     // if is first log of this message
         msg_cell.entry = new_rec;
-      } else {
-        // link into message axis
+      } else {  // link into message chain
         new_rec->msg_suc = msg_pre->msg_suc;
         msg_pre->msg_suc = new_rec;
       }
-      if (sndr_pre == nullptr) {
+      if (sndr_pre == nullptr) {    // if is first log of this sender
         sndr_cell.entry = new_rec;
-      } else {
-        // link into sender axis
+      } else {  // link into sender chain
         new_rec->sender_suc = sndr_pre->sender_suc;
         sndr_pre->sender_suc = new_rec;
       }
-      // if is last log of this message / sender?
-      if (msg_cell.end == msg_pre) {
+      // if is last / first log of this message / sender
+      if (msg_cell.end == msg_pre) {    // HACK: Including `msg_pre == nullptr`.
         msg_cell.end = new_rec;
       }
       if (sndr_cell.end == sndr_pre) {
@@ -222,11 +224,10 @@ public:
     // read content
     file.open(filename, std::ios::in);
     if (file.is_open()) {
-      // NOTE: Some log may span across multiple lines. So you have to store
-      //       the previous line, in case you have to append to it later.
+      // NOTE: Some logs may span across multiple lines. So you have to store
+      //       the previous `LogRecord`, in case you have to append to it later.
       string line;
-      LogRecord *prec = nullptr;    // HACK: But instead, I'll store the
-                                    //       `LogRecord` for convenience.
+      LogRecord *prec = nullptr;
       LogMessage msgbuf;
       size_t cur_char_cnt = 0;
       size_t log_cnt = 0;
@@ -384,6 +385,33 @@ public:
         }
         if (is_correct) { prec = each->entry; break; }
       } // end for
+    } else if (axis == "time") {
+      auto tgt_date = LogDate();
+      try {
+        tgt_date = LogDate(in);
+      } catch (const std::runtime_error &e) {
+        cout << "Wrong time format!" << endl;
+        return nullptr;
+      }
+      for (prec = this->messages->global_begin;
+           prec; prec = prec->time_suc) {
+        if (prec->date >= tgt_date) { break; }
+      }
+      auto candidate = prec->peek(/*sec=*/0, /*allow_repeat=*/true);
+      prec = nullptr;   // reset helper pointer, `prec`
+      for (auto &each : candidate) {
+        system("clear");
+        cout << each->_repr() << endl;
+        bool is_correct;
+        try {
+          is_correct = get_decision("Is this the message you're "
+              "looking for?");
+        } catch (const std::runtime_error &e) {
+          cout << "Unrecognized instruction!" << endl;
+          return nullptr;
+        }
+        if (is_correct) { prec = each; }
+      }
     } else { throw std::invalid_argument("Misc::get_focus() Invalid axis!"); }
     // `prec` set at approx.
     // move along

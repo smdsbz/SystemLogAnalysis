@@ -320,12 +320,13 @@ public:
 
   inline LogRecord() { return; }
 
-  explicit LogRecord(const string &re_mathed_date_string, const bool whole=false);
+  explicit LogRecord(const string &re_mathed_date_string,
+                     const bool whole=false);
 
   explicit LogRecord(const LogRecord &other) {
     this->message    = other.message;
     this->date       = other.date;
-    this->time_suc   = nullptr;
+    this->time_suc   = nullptr;     // don't copy relations for a discreet node
     this->msg_suc    = nullptr;
     this->sender_suc = nullptr;
     return;
@@ -350,7 +351,7 @@ public:
     return *this;
   }
 
-  // called by Graph when inserting `LogRecord`s
+  // NOTE: Called by `Storage` after `LogMessage` is inserted.
   inline LogRecord &set_message(LogMessage &msg) {
     message = &msg;
     return *this;
@@ -386,10 +387,9 @@ public:
   inline iterator begin(axis_type axis=TIME) { return iterator(*this, axis); }
   inline iterator end(axis_type axis=TIME) { return iterator(nullptr, axis); }
 
-  vector<LogRecord *> peek(size_t sec=5,
-                           const bool allow_repeat=false) {
+  vector<LogRecord *> peek(size_t sec=5, const bool allow_repeat=false) {
     vector<LogRecord *> ret;
-    ret.push_back(this);    // add self to pattern
+    ret.push_back(this);    // add self to peak-view
     auto border = this->date + sec;
     for (LogRecord *each = this->time_suc; each; each = each->time_suc) {
       if (!allow_repeat && each->message == this->message) {
@@ -415,7 +415,7 @@ class HashFunc {
 public:
   size_t hash_range = STRHASH_RANGE;
   size_t pool_size  = HASH_SPACE;
-  unsigned char selection = 0;
+  unsigned char selection = 0;  // (reserved) select with hash func to use
 
 public:
 
@@ -457,8 +457,8 @@ public:
     // `ret` is sum of ASCII chars
     ret -= this->hash_range * multiplier * 2
            * (static_cast<int64_t>('a') - 6U);
-    // `ret` is deviation from 0 (expected)
-    // HACK: use enhanced sigmoid to map deviation range to index range
+    // (expecting) `ret` is deviation from 0, pos. and neg.
+    // HACK: Use tuned sigmoid to map deviation range to index range
     double shived = (
       static_cast<double>(this->pool_size - 1)
       / ( 1.0 + exp(-2.8 * 1E-8 * static_cast<double>(this->pool_size) * ret) )
