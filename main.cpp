@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
         for (; axis != "message"
                 && axis != "sender"
                 && axis != "time";) {
-          cout << "Query range (message/sender): "; cout.flush();
+          cout << "Query range (message/sender/time): "; cout.flush();
           getline(cin, axis);
         }
         string in;
