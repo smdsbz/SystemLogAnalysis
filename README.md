@@ -1,3 +1,10 @@
+**Announcement**  
+<br>
+*THIS THREAD IS NO LONGER UNDER ACTIVE DEVELOPMENT!*  
+For incremental updates, please move to
+[the GUI version](https://github.com/smdsbz/SysLogAnalysis-QtGUI),
+where a GUI is also presented (using Qt5), whilst core parts remain the same.
+
 # SystemLogAnalysis
 Data-Structure Curriculum Design, Grade 2 First-Half, Topic 1
 
